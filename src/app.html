@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html data-theme="cerberus">
 
 <head>
 	<meta charset="utf-8" />
@@ -12,6 +12,8 @@
 			fetch("%sveltekit.assets%/main.wasm"),
 			go.importObject
 		);
+		window.Go = instance;
+		window.GoModule = module;
 		await go.run(instance);
 	</script>
 </head>

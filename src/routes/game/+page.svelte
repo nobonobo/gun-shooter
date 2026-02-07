@@ -2,4 +2,4 @@
   <title>Game Playing</title>
 </svelte:head>
 <h1>Game Playing</h1>
-<p><a href="/">Quit</a></p>
+<a href="/room" class="btn preset-filled-error-500">Room</a>

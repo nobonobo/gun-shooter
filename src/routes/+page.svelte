@@ -3,7 +3,4 @@
 </svelte:head>
 <h1>Top Page</h1>
 
-<ul>
-  <li><a href="/game">Game</a></li>
-  <li><a href="/scope">Scope</a></li>
-</ul>
+<a href="/room" class="btn preset-filled-primary-500">Room</a>

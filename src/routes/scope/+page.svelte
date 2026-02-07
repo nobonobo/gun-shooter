@@ -1,4 +1,4 @@
 <svelte:head>
   <title>Scope</title>
 </svelte:head>
-<p><a href="/">Quit</a></p>
+<a href="/room" class="btn preset-filled-error-500">Room</a>
