@@ -4,7 +4,9 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
+		"predev": "sh -c 'GOOS=js GOARCH=wasm go build -o static/main.wasm .'",
 		"dev": "vite dev",
+		"prebuild": "sh -c 'GOOS=js GOARCH=wasm go build -o static/main.wasm .'",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''"
