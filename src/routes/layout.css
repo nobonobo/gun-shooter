@@ -1,0 +1,68 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+@import '@skeletonlabs/skeleton';
+@import '@skeletonlabs/skeleton-svelte';
+@import '@skeletonlabs/skeleton/themes/cerberus';
+
+
+.page-container {
+  width: 100%
+}
+
+@media (min-width: 640px) {
+  .page-container {
+    max-width: 640px
+  }
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    max-width: 768px
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-container {
+    max-width: 1024px
+  }
+}
+
+@media (min-width: 1280px) {
+  .page-container {
+    max-width: 1280px
+  }
+}
+
+@media (min-width: 1536px) {
+  .page-container {
+    max-width: 1536px
+  }
+}
+
+.page-container {
+  margin-left: auto;
+  margin-right: auto
+}
+
+.page-container>:not([hidden])~:not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(calc(5rem * var(--space-scale-factor)) * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(calc(5rem * var(--space-scale-factor)) * var(--tw-space-y-reverse))
+}
+
+.page-container {
+  padding-left: calc(1rem * var(--space-scale-factor));
+  padding-right: calc(1rem * var(--space-scale-factor));
+  padding-top: calc(2.5rem * var(--space-scale-factor));
+  padding-bottom: calc(2.5rem * var(--space-scale-factor))
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    padding-left: calc(2.5rem * var(--space-scale-factor));
+    padding-right: calc(2.5rem * var(--space-scale-factor));
+    padding-top: calc(5rem * var(--space-scale-factor));
+    padding-bottom: calc(5rem * var(--space-scale-factor))
+  }
+}
