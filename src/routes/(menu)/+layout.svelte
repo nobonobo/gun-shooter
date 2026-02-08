@@ -3,6 +3,8 @@
   import favicon from "$lib/assets/favicon.svg";
   import { CircleUserIcon, MenuIcon } from "@lucide/svelte";
   import { AppBar } from "@skeletonlabs/skeleton-svelte";
+  import { page } from "$app/stores";
+  let title = $derived(" : " + $page.data?.title || "");
   let { children } = $props();
 </script>
 
@@ -17,7 +19,7 @@
       >
     </AppBar.Lead>
     <AppBar.Headline>
-      <p class="text-2xl">Gun Shooter</p>
+      <p class="text-2xl">Gun Shooter{title}</p>
     </AppBar.Headline>
     <AppBar.Trail>
       <button type="button" class="btn-icon hover:preset-tonal"

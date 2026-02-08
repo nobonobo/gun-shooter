@@ -1,12 +1,23 @@
 # gun-shooter
 
+Result: https://nobonobo.github.io/gun-shooter/
+
 # scenes
 - top
-  - create room -> room with hostID
-- room with hostID
+  - create room -> room
+- room(start listen)
   - start game -> game
-  - join room -> scope (Connect(dstID))
+  - QR code(join with hostID) -> join with hostID
+- join with hostID -> scope
+  - nickname(form)
 - game
-  - quit -> room with hostID
-- scope
-  - quit -> room with hostID
+  - quit -> room
+- scope (connect to hostID)
+  - quit -> room
+
+# data types
+
+- pointer position (client -> host)
+  - nickname
+  - x, y (float)
+  - trigger (boolean)

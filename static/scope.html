@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Three.js + AR.js 高解像度版（修正）</title>
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, viewport-fit=cover">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./images/favicon.ico">
+  <link rel="apple-touch-icon" href="./images/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/three.js/build/ar.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/three.js/build/ar-threex.js"></script>
+  <script src="./wasm_exec.js"></script>
+  <script type="module">
+    const go = new Go();
+    const { instance, module } = await WebAssembly.instantiateStreaming(
+      fetch("./main.wasm"),
+      go.importObject
+    );
+    window.Go = instance;
+    window.GoModule = module;
+    await go.run(instance);
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      background-color: black;
+    }
+
+    .text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(calc(-50% + 5em), calc(-50% + 2em));
+      font-size: 4em;
+      color: white;
+      padding: 0.5em;
+      background: black;
+      border-radius: 1em;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      z-index: 10;
+      opacity: 0.5;
+      white-space: nowrap;
+    }
+
+    .text:empty {
+      display: none;
+    }
+
+    #renderCanvas,
+    #preview {
+      height: 100vh !important;
+      width: auto !important;
+      max-width: 100vw !important;
+      margin: 0 auto !important;
+      object-fit: contain !important;
+    }
+
+    #renderCanvas {
+      z-index: 2 !important;
+    }
+
+    #circularPreview {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 80vh;
+      height: 80vh;
+      transform: translate(-50%, -50%);
+      clip-path: circle(50% at 50% 50%);
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    #circularPreview video {
+      position: relative;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      transform: translate(-50%, -50%) scale(2) !important;
+      object-fit: cover;
+    }
+
+    .scope-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.9);
+      mask: radial-gradient(circle 40vh at center, transparent 70%, rgba(0, 0, 0, 0.8) 90%, black 100%);
+      -webkit-mask: radial-gradient(circle 40vh at center, transparent 70%, rgba(0, 0, 0, 0.8) 90%, black 100%);
+      z-index: 2;
+      user-select: none;
+      transition: background-color 0.5s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    .scope-bg.flash {
+      transition: background-color 0s;
+      background: rgb(255, 255, 255, 1.0);
+    }
+
+    .scope-cross {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+      z-index: 3;
+    }
+
+    .scope-cross::before,
+    .scope-cross::after {
+      content: '';
+      position: absolute;
+      opacity: 0.5;
+      background: black;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .scope-cross::before {
+      width: 2px;
+      height: 80vh;
+    }
+
+    .scope-cross::after {
+      width: 80vh;
+      height: 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="circularPreview"></div>
+  <div class="scope-bg" id="scope"></div>
+  <div class="scope-cross"></div>
+
+  <script>
+    let name = new URLSearchParams(window.location.search).get("name");
+    let hostID = new URLSearchParams(window.location.search).get("hostID");
+    let fire = false;
+    document.body.addEventListener('click', async (e) => {
+      e.preventDefault();
+      scope.classList.add('flash');
+      setTimeout(() => scope.classList.remove('flash'), 20);
+      fire = true;
+    });
+    // =============================================================
+    // 1. Three.js 基本設定
+    // =============================================================
+    const scene = new THREE.Scene();
+    const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+    scene.add(light);
+    const camera = new THREE.PerspectiveCamera();
+    scene.add(camera);
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance"
+    });
+    renderer.domElement.id = 'renderCanvas';
+    document.body.appendChild(renderer.domElement);
+
+    // =============================================================
+    // 2. AR.js 設定
+    // =============================================================
+    const arToolkitSource = new THREEx.ArToolkitSource({
+      sourceType: 'webcam',
+    });
+    const arToolkitContext = new THREEx.ArToolkitContext({
+      cameraParametersUrl: 'https://raw.githack.com/AR-js-org/AR.js/master/data/data/camera_para.dat',
+      detectionMode: 'mono',
+      matrixCodeType: null,
+    });
+    let isInitialized = false;
+
+    arToolkitSource.init(() => {
+      const videoElement = arToolkitSource.domElement;
+      if (videoElement && videoElement.tagName === 'VIDEO') {
+        videoElement.id = 'preview';
+      }
+      const circularPreview = document.getElementById('circularPreview');
+      const clonedVideo = videoElement.cloneNode(false);
+      clonedVideo.id = 'preview2';
+      clonedVideo.muted = true;
+      circularPreview.appendChild(clonedVideo);
+      clonedVideo.style.width = '100%';
+      clonedVideo.style.height = '100%';
+      clonedVideo.style.top = '50%';
+      clonedVideo.style.left = '50%';
+      clonedVideo.style.transform = 'translate(-50%, -50%) scale(2) !important';
+      clonedVideo.srcObject = videoElement.srcObject;
+      setTimeout(onResize, 500);
+    });
+
+    arToolkitContext.init(() => {
+      camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
+      isInitialized = true;
+      console.log('AR Context initialized');
+    });
+
+    // =============================================================
+    // 3. リサイズ処理
+    // =============================================================
+    let resizeTimeout;
+    function onResize() {
+      console.log('onResize');
+      const sourceVideo = arToolkitSource.domElement;
+      if (arToolkitSource.ready === true) {
+        const aspectRatio = sourceVideo.videoWidth / sourceVideo.videoHeight;
+        const h = window.innerHeight;
+        const w = h * aspectRatio;
+        renderer.domElement.style.aspectRatio = aspectRatio;
+        renderer.setSize(w, h, false);
+      }
+      if (arToolkitContext.arController !== null) {
+        const arCanvas = arToolkitContext.arController.canvas;
+        arCanvas.style.width = sourceVideo.style.width;
+        arCanvas.style.height = sourceVideo.style.height;
+        sourceVideo.style.position = 'absolute';
+        sourceVideo.style.top = '50%';
+        sourceVideo.style.left = '50%';
+        sourceVideo.style.transform = 'translate(-50%, -50%)';
+        sourceVideo.style.objectFit = 'contain';
+        camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(onResize, 200);
+    });
+    window.addEventListener('orientationchange', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(onResize, 500);
+    });
+
+    // =============================================================
+    // 4. マーカー設定
+    // =============================================================
+    const markerData = [
+      { name: 'LetterA', url: './images/pattern-marker_0.patt' }, // 左上   → 0%,   0%
+      { name: 'LetterB', url: './images/pattern-marker_1.patt' }, // 右上   → 100%, 0%
+      { name: 'LetterC', url: './images/pattern-marker_2.patt' }, // 左下   → 0%,  100%
+      { name: 'LetterD', url: './images/pattern-marker_3.patt' }, // 右下   → 100%,100%
+    ];
+
+    const markerGroups = [];
+    markerData.forEach((data) => {
+      const markerGroup = new THREE.Group();
+      scene.add(markerGroup);
+      markerGroups.push(markerGroup);
+      new THREEx.ArMarkerControls(arToolkitContext, markerGroup, {
+        type: 'pattern',
+        patternUrl: data.url,
+      });
+      const axesHelper = new THREE.AxesHelper(0.5);
+      markerGroup.add(axesHelper);
+      console.log(`Marker ${data.name} initialized`);
+    });
+
+    // =============================================================
+    // 5. レンダリングループ & 座標計算
+    // =============================================================
+    function update() {
+      if (arToolkitSource.ready === false) return;
+      arToolkitContext.update(arToolkitSource.domElement);
+
+      if (isInitialized && arToolkitContext.arController !== null) {
+        camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
+      }
+      // 4つすべて見えているときだけ計算
+      if (markerGroups.every(g => g.visible)) {
+        const width = renderer.domElement.clientWidth;
+        const height = renderer.domElement.clientHeight;
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        // 各マーカーのスクリーン座標を取得
+        const positions = markerGroups.map(group => {
+          const pos = new THREE.Vector3().setFromMatrixPosition(group.matrixWorld);
+          pos.project(camera);
+          // Three.jsのNDC → スクリーン座標（Yは反転）
+          const screenX = (pos.x + 1) / 2 * width;
+          const screenY = (1 - pos.y) / 2 * height;
+          return { x: screenX, y: screenY };
+        });
+
+        const A = positions[0]; // 0%,   0%
+        const B = positions[1]; // 100%, 0%
+        const C = positions[2]; // 0%,  100%
+        const D = positions[3]; // 100%,100%
+
+        // 双線形補間の逆変換で u,v を求める
+        // P = A + u*(B-A) + v*(C-A) + u*v*(D - B - C + A)
+        const denomX = (B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x);
+        const denomY = (D.x - B.x) * (C.y - A.y) - (D.y - B.y) * (C.x - A.x);
+
+        let u = 0, v = 0;
+
+        if (Math.abs(denomX) > 1e-6) {
+          const t = ((centerX - A.x) * (C.y - A.y) - (centerY - A.y) * (C.x - A.x)) / denomX;
+          u = t;
+        }
+
+        if (Math.abs(denomY) > 1e-6) {
+          const s = ((centerX - A.x) * (D.y - B.y) - (centerY - A.y) * (D.x - B.x)) / denomY;
+          v = s;
+        }
+
+        // より正確にするため、両方の式から平均を取る（近似）
+        // ここでは簡易的にu,vを別々に計算したものを採用（実際は非線形解が必要な場合もあるが簡易実装）
+
+        // よりロバストな方法：uを固定してvを求める、または逆行列を使う
+        // ここでは簡易的に次のように補正
+        const vecAB = { x: B.x - A.x, y: B.y - A.y };
+        const vecAC = { x: C.x - A.x, y: C.y - A.y };
+        const vecP = { x: centerX - A.x, y: centerY - A.y };
+
+        const det = vecAB.x * vecAC.y - vecAB.y * vecAC.x;
+        if (Math.abs(det) > 1e-6) {
+          u = (vecP.x * vecAC.y - vecP.y * vecAC.x) / det;
+          v = (vecAB.x * vecP.y - vecAB.y * vecP.x) / det;
+        } else {
+          // 退化ケース（ほぼ平行四辺形崩壊）はスキップ
+          return;
+        }
+        globalThis.Go.Send(name, u, v, fire);
+        fire = false;
+      }
+    }
+
+    function render() {
+      renderer.render(scene, camera);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      update();
+      render();
+    }
+
+    let initCheck = setInterval(() => {
+      if (arToolkitSource.ready !== false && isInitialized) {
+        clearInterval(initCheck);
+        animate();
+        console.log('AR system started');
+        onResize();
+        let selfID = globalThis.Go.UUID();
+        globalThis.Go.Setup(selfID);
+        globalThis.Go.Connect(name, hostID);
+      }
+    }, 100);
+  </script>
+</body>
+
+</html>
