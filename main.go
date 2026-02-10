@@ -42,6 +42,15 @@ func ID() string {
 	return instance.ID()
 }
 
+func CLose() {
+	mu.Lock()
+	defer mu.Unlock()
+	stop()
+	instance.Close()
+	instance = nil
+	stop = func() {}
+}
+
 func Listen(hostID string) {
 	stop()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -49,7 +58,6 @@ func Listen(hostID string) {
 	go func() {
 		informs = map[string]*Info{}
 		instance = node.New(hostID)
-		defer instance.Close()
 		log.Println("Listening on:", hostID)
 		instance.OnConnected = func(n *node.Node) {
 			id := n.ID()
