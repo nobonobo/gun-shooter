@@ -15,6 +15,7 @@
 			);
 			go.run(instance);
 			globalThis.Go = instance;
+			instance.exports.wasmLoaded();
 		});
 	</script>
 </head>
