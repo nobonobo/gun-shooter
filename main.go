@@ -42,7 +42,7 @@ func ID() string {
 	return instance.ID()
 }
 
-func CLose() {
+func Close() {
 	mu.Lock()
 	defer mu.Unlock()
 	stop()
@@ -63,7 +63,7 @@ func Listen(hostID string) {
 			id := n.ID()
 			log.Println("Connected:", id)
 			n.PeerConnection().OnDataChannel(func(dc *webrtc.DataChannel) {
-				log.Println("DataChannel:", id)
+				log.Println("DC Connected:", id)
 				dc.OnMessage(func(msg webrtc.DataChannelMessage) {
 					var info *Info
 					if err := json.Unmarshal(msg.Data, &info); err != nil {
@@ -78,7 +78,7 @@ func Listen(hostID string) {
 					mu.Lock()
 					delete(informs, id)
 					mu.Unlock()
-					log.Println("Disconnected:", id)
+					log.Println("DC Disconnected:", id)
 				})
 			})
 		}
@@ -155,6 +155,10 @@ func main() {
 		}),
 		"Stop": js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			Stop()
+			return nil
+		}),
+		"Close": js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+			Close()
 			return nil
 		}),
 		"Connect": js.FuncOf(func(this js.Value, args []js.Value) interface{} {
