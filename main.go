@@ -108,7 +108,6 @@ func Connect(name, dst string) {
 		}
 		stop = func() {
 			cancel()
-			instance.Close()
 		}
 		instance.DataChannel().OnOpen(func() {
 			log.Println("DataChannel opened:", name)
