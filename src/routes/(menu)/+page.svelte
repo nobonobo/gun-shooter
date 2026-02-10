@@ -1,5 +1,6 @@
 <script>
   import { onMount } from "svelte";
+  import { base } from "$app/paths";
   export let data;
   let ID;
   onMount(async () => {
@@ -12,4 +13,4 @@
   <title>{data.title}</title>
 </svelte:head>
 <p>HostID: {ID}</p>
-<a href="/room?hostID={ID}" class="btn preset-filled-primary-500">Room</a>
+<a href="{base}/room?hostID={ID}" class="btn preset-filled-primary-500">Room</a>

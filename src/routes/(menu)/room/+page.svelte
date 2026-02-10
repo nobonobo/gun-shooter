@@ -3,6 +3,7 @@
   import { browser } from "$app/environment";
   import { page } from "$app/stores";
   import QRCode from "qrcode";
+  import { base } from "$app/paths";
   import { goto } from "$app/navigation";
   export let data;
   const hostID = browser ? $page.url.searchParams.get("hostID") : "";
@@ -23,7 +24,7 @@
   onMount(async () => {
     if (hostID) {
       const baseUrl = $page.url.origin;
-      const qrUrl = `${baseUrl}/join?hostID=${hostID}`;
+      const qrUrl = `${baseUrl}/${base}/join?hostID=${hostID}`;
       generateQR(qrUrl);
       await globalThis.Go.Listen(hostID);
       timer = setInterval(interval, 1000);
@@ -47,14 +48,14 @@
 </svelte:head>
 <div class="justify-center">
   <nav class="btn-group p-4 md:flex-row">
-    <a href="/" class="btn preset-filled-error-500">Quit</a>
-    <a href="/game?hostID={hostID}" class="btn preset-filled-primary-500"
+    <a href="{base}/" class="btn preset-filled-error-500">Quit</a>
+    <a href="{base}/game?hostID={hostID}" class="btn preset-filled-primary-500"
       >Game</a
     >
   </nav>
   <div class="flex gap-4">
     <div class="flex-none card p-4 preset-filled-surface-100-900 inline-block">
-      <a href="/join?hostID={hostID}" class="inline-block">
+      <a href="{base}/join?hostID={hostID}" class="inline-block">
         {#if qrSvg}
           {@html qrSvg}
         {:else}

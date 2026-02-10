@@ -6,6 +6,9 @@ const config = {
     adapter: process.argv.includes('dev') ? undefined : adapter(),
     alias: {
       '@/*': './src/lib/*',
+    },
+    paths: {
+      base: process.argv.includes('dev') ? '' : '/gun-shooter'
     }
   }
 };
