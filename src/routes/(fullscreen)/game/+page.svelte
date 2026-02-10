@@ -86,7 +86,7 @@
     {width}
     {height}
     style="width:100%; height:100%; display:block; cursor:none;"
-  />
+  ></canvas>
   <!-- 4隅に固定配置する画像 -->
   <img
     src="./images/pattern-marker_0.png"
