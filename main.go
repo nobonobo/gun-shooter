@@ -78,6 +78,7 @@ func Listen(hostID string) {
 					mu.Lock()
 					delete(informs, id)
 					mu.Unlock()
+					log.Println("Disconnected:", id)
 				})
 			})
 		}
