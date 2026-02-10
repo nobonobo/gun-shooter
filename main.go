@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"sync"
 	"syscall/js"
 
 	"github.com/google/uuid"
@@ -22,6 +23,7 @@ type Info struct {
 var (
 	instance *node.Node
 	stop     = func() {}
+	mu       sync.RWMutex
 	informs  = map[string]*Info{}
 )
 
@@ -60,10 +62,14 @@ func Listen(hostID string) {
 						log.Println(err)
 						return
 					}
+					mu.Lock()
 					informs[info.ID] = info
+					mu.Unlock()
 				})
 				dc.OnClose(func() {
+					mu.Lock()
 					delete(informs, id)
+					mu.Unlock()
 				})
 			})
 		}
@@ -74,6 +80,8 @@ func Listen(hostID string) {
 }
 
 func Inform() string {
+	mu.RLock()
+	defer mu.RUnlock()
 	b, _ := json.Marshal(informs)
 	return string(b)
 }
@@ -122,7 +130,6 @@ func Send(name string, x, y float64, fire bool) {
 }
 
 func main() {
-	log.Println("WASM started")
 	js.Global().Set("Go", js.ValueOf(map[string]interface{}{
 		"UUID": js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			return UUID()
@@ -154,5 +161,6 @@ func main() {
 			return nil
 		}),
 	}))
+	log.Println("WASM loaded")
 	select {}
 }
