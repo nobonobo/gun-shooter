@@ -2,9 +2,9 @@
   import { onMount } from "svelte";
   export let data;
   let ID;
-  onMount(() => {
-    ID = globalThis.Go.UUID();
-    globalThis.Go.Stop();
+  onMount(async () => {
+    ID = await globalThis.Go.UUID();
+    await globalThis.Go.Stop();
   });
 </script>
 

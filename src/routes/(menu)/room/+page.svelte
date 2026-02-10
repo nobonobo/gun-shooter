@@ -20,24 +20,24 @@
     }
   }
   let timer = 0;
-  onMount(() => {
+  onMount(async () => {
     if (hostID) {
       const baseUrl = $page.url.origin;
       const qrUrl = `${baseUrl}/join?hostID=${hostID}`;
       generateQR(qrUrl);
-      globalThis.Go.Listen(hostID);
+      await globalThis.Go.Listen(hostID);
       timer = setInterval(interval, 1000);
     }
   });
-  onDestroy(() => {
+  onDestroy(async () => {
     if (hostID) {
-      globalThis.Go.Stop();
+      await globalThis.Go.Stop();
       clearInterval(timer);
     }
     console.log("destroyed");
   });
-  function interval() {
-    inform = JSON.parse(globalThis.Go.Inform());
+  async function interval() {
+    inform = JSON.parse(await globalThis.Go.Inform());
     console.log(inform);
   }
 </script>

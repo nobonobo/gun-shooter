@@ -55,8 +55,8 @@
     });
   }
 
-  function animate() {
-    const entries = JSON.parse(globalThis.go.Inform());
+  async function animate() {
+    const entries = JSON.parse(await globalThis.Go.Inform());
     draw(entries);
     rafId = requestAnimationFrame(animate);
   }
