@@ -26,9 +26,7 @@
       const baseUrl = $page.url.origin;
       const qrUrl = `${baseUrl}${base}/join?hostID=${hostID}`;
       generateQR(qrUrl);
-      navigator.locks.request("wasm-load", async (lock) => {
-        await globalThis.Go.Listen(hostID);
-      });
+      await (await globalThis.WaitGo()).Listen(hostID);
       timer = setInterval(interval, 1000);
     }
   });

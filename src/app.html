@@ -7,16 +7,28 @@
 	%sveltekit.head%
 	<script src="%sveltekit.assets%/wasm_exec.js"></script>
 	<script type="module">
-		navigator.locks.request('wasm-load', async lock => {
-			const go = new Go();
-			const { instance, module } = await WebAssembly.instantiateStreaming(
-				fetch("%sveltekit.assets%/main.wasm"),
-				go.importObject
-			);
-			go.run(instance);
-			globalThis.Go = instance;
-			instance.exports.wasmLoaded();
-		});
+		globalThis.WaitGo = function () {
+			// globalThisはProxyでラップできないのでポーリング併用
+			return new Promise((resolve, reject) => {
+				const check = () => {
+					if (globalThis["Go"] && globalThis["Go"]["UUID"]) {
+						resolve(globalThis["Go"]);
+					} else {
+						setTimeout(check, 50); // 50msポーリング
+					}
+				};
+				check();
+				// 安全のため5秒タイムアウト
+				setTimeout(() => reject(new Error('タイムアウト')), 5000);
+			});
+		}
+		const go = new Go();
+		const { instance, module } = await WebAssembly.instantiateStreaming(
+			fetch("%sveltekit.assets%/main.wasm"),
+			go.importObject
+		);
+		globalThis.Go = instance;
+		await go.run(instance);
 	</script>
 </head>
 
