@@ -6,9 +6,7 @@
   export let data;
   const hostID = browser ? $page.url.searchParams.get("hostID") : "";
   onMount(async () => {
-    navigator.locks.request("wasm-load", async (lock) => {
-      await globalThis.Go.Stop();
-    });
+    await (await globalThis.WaitGo()).Stop();
   });
 </script>
 
