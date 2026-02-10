@@ -129,6 +129,13 @@ func Send(name string, x, y float64, fire bool) {
 	}
 }
 
+var waitCh = make(chan struct{})
+
+//go:export wasmLoaded
+func wasmLoaded() {
+	<-waitCh
+}
+
 func main() {
 	js.Global().Set("Go", js.ValueOf(map[string]interface{}{
 		"UUID": js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -161,6 +168,7 @@ func main() {
 			return nil
 		}),
 	}))
+	close(waitCh)
 	log.Println("WASM loaded")
 	select {}
 }

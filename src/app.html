@@ -7,14 +7,15 @@
 	%sveltekit.head%
 	<script src="%sveltekit.assets%/wasm_exec.js"></script>
 	<script type="module">
-		const go = new Go();
-		const { instance, module } = await WebAssembly.instantiateStreaming(
-			fetch("%sveltekit.assets%/main.wasm"),
-			go.importObject
-		);
-		window.Go = instance;
-		window.GoModule = module;
-		await go.run(instance);
+		navigator.locks.request('wasm-load', async lock => {
+			const go = new Go();
+			const { instance, module } = await WebAssembly.instantiateStreaming(
+				fetch("%sveltekit.assets%/main.wasm"),
+				go.importObject
+			);
+			go.run(instance);
+			globalThis.Go = instance;
+		});
 	</script>
 </head>
 

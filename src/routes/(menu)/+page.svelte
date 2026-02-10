@@ -4,8 +4,10 @@
   export let data;
   let ID;
   onMount(async () => {
-    ID = await globalThis.Go.UUID();
-    await globalThis.Go.Stop();
+    navigator.locks.request("wasm-load", async (lock) => {
+      ID = await globalThis.Go.UUID();
+      await globalThis.Go.Stop();
+    });
   });
 </script>
 
