@@ -131,7 +131,7 @@ func Send(name string, x, y float64, fire bool) {
 
 var waitCh = make(chan struct{})
 
-//go:export wasmLoaded
+//go:wasmexport wasmLoaded
 func wasmLoaded() {
 	<-waitCh
 }
