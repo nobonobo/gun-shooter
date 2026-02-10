@@ -57,8 +57,10 @@
 
   async function animate() {
     const entries = JSON.parse(await globalThis.Go.Inform());
-    console.log("entries:", entries);
-    draw(entries);
+    if (entries.length > 0) {
+      console.log("entries:", entries);
+      draw(entries);
+    }
     rafId = requestAnimationFrame(animate);
   }
 
