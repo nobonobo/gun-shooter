@@ -83,7 +83,7 @@ func Listen(hostID string) {
 			})
 		}
 		if err := instance.Listen(ctx); err != nil {
-			log.Println(err)
+			log.Println("Listen Failed:", err)
 		}
 	}()
 }

@@ -2,7 +2,7 @@ module github.com/nobonobo/gun-shooter
 
 go 1.25.6
 
-require github.com/nobonobo/rtcconnect v0.0.0-20260210142930-6e055fa1ba48
+require github.com/nobonobo/rtcconnect v0.0.0-20260210162923-8ae6bc7af80a
 
 require (
 	github.com/google/uuid v1.6.0 // indirect

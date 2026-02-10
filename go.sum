@@ -6,8 +6,8 @@ github.com/nobonobo/operator v0.0.0-20260210142439-fc433f851463 h1:uFoW07YnT77dv
 github.com/nobonobo/operator v0.0.0-20260210142439-fc433f851463/go.mod h1:APSgIySvD0XMof9j+tyqnz7m2gPvgkXlcjIczIg38KI=
 github.com/nobonobo/rtcconnect v0.0.0-20260208080022-7b46c605deff h1:ak5CAtdoEu2AnqUaY8LOXQssle/2jp5+Cvpleis9ywE=
 github.com/nobonobo/rtcconnect v0.0.0-20260208080022-7b46c605deff/go.mod h1:86buLOnvKkIXKKo14ZI9kmp6LXWbw3+U2DvM0DoPoUQ=
-github.com/nobonobo/rtcconnect v0.0.0-20260210142930-6e055fa1ba48 h1:UXpCSoEpaD+X5EzcgUIS1+WMioTpLS8FzFkumGBoqhM=
-github.com/nobonobo/rtcconnect v0.0.0-20260210142930-6e055fa1ba48/go.mod h1:XxuNUHwdn9Ajn1xJorek7P08mKIRHAuKueZCwCtVVT0=
+github.com/nobonobo/rtcconnect v0.0.0-20260210162923-8ae6bc7af80a h1:9FtESdqs4JlCCGoJfWYCdmg0MuCO3A8yhNjdNZNvgWs=
+github.com/nobonobo/rtcconnect v0.0.0-20260210162923-8ae6bc7af80a/go.mod h1:XxuNUHwdn9Ajn1xJorek7P08mKIRHAuKueZCwCtVVT0=
 github.com/pion/datachannel v1.6.0 h1:XecBlj+cvsxhAMZWFfFcPyUaDZtd7IJvrXqlXD/53i0=
 github.com/pion/datachannel v1.6.0/go.mod h1:ur+wzYF8mWdC+Mkis5Thosk+u/VOL287apDNEbFpsIk=
 github.com/pion/dtls/v3 v3.0.10 h1:k9ekkq1kaZoxnNEbyLKI8DI37j/Nbk1HWmMuywpQJgg=
