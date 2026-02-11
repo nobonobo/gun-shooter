@@ -90,13 +90,7 @@
   <title>{data.title}</title>
 </svelte:head>
 <main class="page-container">
-  <canvas
-    id="canvas"
-    bind:this={canvas}
-    {width}
-    {height}
-    style="width:100%; height:100%; display:block; cursor:none;"
-  ></canvas>
+  <canvas id="canvas" bind:this={canvas}></canvas>
   <!-- 4隅に固定配置する画像 -->
   <img
     src="./images/pattern-marker_0.png"
@@ -123,7 +117,9 @@
 <style>
   .page-container {
     margin: 0;
-    min-height: 100vh;
+    padding: 0;
+    width: 100%;
+    height: 100%;
     background-color: #f0f0f0;
     background-image:
       /* 市松模様1（白黒チェック） */
@@ -146,7 +142,7 @@
     background-position:
       0 0,
       20px 20px; /* 2つ目の模様を半分ずらす */
-    position: relative;
+    position: block;
     overflow: hidden;
   }
   #canvas {
@@ -155,6 +151,7 @@
     left: 0;
     width: 100%;
     height: 100%;
+    cursor: none;
   }
   /* 4隅配置用の共通スタイル */
   .corner-image {
