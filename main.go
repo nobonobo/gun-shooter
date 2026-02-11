@@ -57,8 +57,9 @@ func Listen(hostID string) {
 	stop = cancel
 	go func() {
 		informs = map[string]*Info{}
-		instance = node.New(hostID)
+		instance = node.NewPeer(hostID, nil)
 		log.Println("Listening on:", hostID)
+		defer log.Println("Listening off:", hostID)
 		instance.OnConnected = func(n *node.Node) {
 			id := n.ID()
 			log.Println("Connected:", id)
@@ -113,6 +114,9 @@ func Connect(name, dst string) {
 		instance.DataChannel().OnOpen(func() {
 			log.Println("DataChannel opened:", name)
 			Send(name, 0, 0, false)
+		})
+		instance.DataChannel().OnClose(func() {
+			log.Println("DataChannel closed:", name)
 		})
 	}()
 }
