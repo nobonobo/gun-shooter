@@ -57,10 +57,12 @@
   }
 
   async function animate() {
-    let s = await globalThis.Go.Inform();
-    const entries = Object.values(JSON.parse(s));
-    if (entries.length > 0) {
-      draw(entries);
+    if (browser) {
+      let s = await globalThis.Go.Inform();
+      const entries = Object.values(JSON.parse(s));
+      if (entries.length > 0) {
+        draw(entries);
+      }
     }
     rafId = requestAnimationFrame(animate);
   }
