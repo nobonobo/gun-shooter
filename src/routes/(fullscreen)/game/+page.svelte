@@ -8,6 +8,25 @@
   let ctx;
   let rafId = 0;
 
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    // CSSサイズ（論理ピクセル）
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+
+    // 物理ピクセルサイズ
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    // コンテキストをスケール（論理座標で描画可能）
+    ctx.scale(dpr, dpr);
+
+    // 描画処理（例: 背景クリア）
+    ctx.clearRect(0, 0, rect.width, rect.height);
+  }
+
   function draw(entries) {
     if (!ctx) return;
     const width = canvas.width;
@@ -57,6 +76,8 @@
   onMount(async () => {
     await globalThis.WaitGo();
     ctx = canvas.getContext("2d");
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas(); // 初回実行
     rafId = requestAnimationFrame(animate);
   });
 
