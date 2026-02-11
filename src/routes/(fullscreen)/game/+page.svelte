@@ -105,11 +105,18 @@
     height: 100vh;
     overflow: hidden;
   }
+  :global(.contents) {
+    margin: 0;
+    padding: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden;
+  }
   .container {
     margin: 0;
     padding: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     background-color: #f0f0f0;
     background-image:
       /* 市松模様1（白黒チェック） */
@@ -138,8 +145,8 @@
   #canvas {
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     cursor: none;
   }
   /* 4隅配置用の共通スタイル */
