@@ -105,6 +105,14 @@
     height: 100vh;
     overflow: hidden;
   }
+  :global(body) div {
+    margin: 0;
+    padding: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden;
+    display: block !important;
+  }
   :global(.contents) {
     margin: 0;
     padding: 0;
