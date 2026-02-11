@@ -72,11 +72,12 @@
     rafId = requestAnimationFrame(animate);
   });
 
-  onDestroy(() => {
+  onDestroy(async () => {
     if (resizeHandler) {
       window.removeEventListener("resize", resizeHandler);
     }
     if (rafId) cancelAnimationFrame(rafId);
+    await globalThis.Go.Close();
   });
 </script>
 
