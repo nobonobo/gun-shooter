@@ -155,7 +155,7 @@
   }
   /* 4隅配置用の共通スタイル */
   .corner-image {
-    position: fixed;
+    position: absolute;
     width: 10vw; /* サイズ調整 */
     height: 10vw;
     z-index: 1000; /* 最前面に */
