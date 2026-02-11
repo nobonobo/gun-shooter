@@ -79,6 +79,8 @@
       overflow: hidden;
     }
     body div.page-container {
+      position: fixed;
+      max-width: none !important;
       margin: 0;
       padding: 0;
       width: 100vw !important;
