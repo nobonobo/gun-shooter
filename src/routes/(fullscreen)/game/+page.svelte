@@ -38,8 +38,8 @@
 
     // 各エントリを描画
     entries.forEach((entry) => {
-      const px = entry.x * width;
-      const py = entry.y * height;
+      const px = entry.x * width * 0.9 + width * 0.05;
+      const py = entry.y * height * 0.9 + height * 0.05;
 
       // マーカー（円）
       ctx.fillStyle = entry.fire ? "#ff6b35" : "#4ecdc4";
