@@ -13,12 +13,12 @@
     const dpr = window.devicePixelRatio || 1;
 
     // CSSサイズ（論理ピクセル）
-    canvas.style.width = rect.width + "px";
-    canvas.style.height = rect.height + "px";
+    //canvas.style.width = rect.width + "px";
+    //canvas.style.height = rect.height + "px";
 
     // 物理ピクセルサイズ
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     // コンテキストをスケール（論理座標で描画可能）
     ctx.scale(dpr, dpr);
