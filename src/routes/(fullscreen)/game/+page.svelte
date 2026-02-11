@@ -119,6 +119,7 @@
 
 <style>
   .page-container {
+    margin: 0;
     min-height: 100vh;
     background-color: #f0f0f0;
     background-image:
