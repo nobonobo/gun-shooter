@@ -56,7 +56,9 @@
   }
 
   async function animate() {
-    const entries = JSON.parse(await globalThis.Go.Inform());
+    let s = await globalThis.Go.Inform();
+    console.log(s);
+    const entries = JSON.parse(s);
     if (entries.length > 0) {
       console.log("entries:", entries);
       draw(entries);
