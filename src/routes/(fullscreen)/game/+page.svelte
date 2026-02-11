@@ -78,7 +78,7 @@
       height: 100vh;
       overflow: hidden;
     }
-    body > div[style*="display: contents"] {
+    body div.page-container {
       margin: 0;
       padding: 0;
       width: 100vw !important;
