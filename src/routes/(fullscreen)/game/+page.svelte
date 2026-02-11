@@ -71,7 +71,7 @@
   <title>{data.title}</title>
 </svelte:head>
 
-<main class="page-container">
+<main class="container">
   <canvas id="canvas" bind:this={canvas}></canvas>
   <!-- 4隅に固定配置する画像 -->
   <img
@@ -104,7 +104,7 @@
     height: 100vh;
     overflow: hidden;
   }
-  .page-container {
+  .container {
     margin: 0;
     padding: 0;
     width: 100%;
