@@ -111,6 +111,7 @@
     width: 100vw !important;
     height: 100vh !important;
     overflow: hidden;
+    display: block !important;
   }
   .container {
     margin: 0;
