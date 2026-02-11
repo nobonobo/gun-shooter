@@ -57,7 +57,7 @@ func Listen(hostID string) {
 	stop = cancel
 	go func() {
 		informs = map[string]*Info{}
-		instance = node.NewPeer(hostID, nil)
+		instance = node.NewHost(hostID)
 		log.Println("Listening on:", hostID)
 		defer log.Println("Listening off:", hostID)
 		instance.OnConnected = func(n *node.Node) {
