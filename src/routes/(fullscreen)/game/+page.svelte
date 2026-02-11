@@ -59,7 +59,6 @@
     let s = await globalThis.Go.Inform();
     const entries = Object.values(JSON.parse(s));
     if (entries.length > 0) {
-      console.log("entries:", entries);
       draw(entries);
     }
     rafId = requestAnimationFrame(animate);
