@@ -88,6 +88,7 @@
 </svelte:head>
 <main class="page-container">
   <canvas
+    id="canvas"
     bind:this={canvas}
     {width}
     {height}
@@ -143,6 +144,13 @@
       20px 20px; /* 2つ目の模様を半分ずらす */
     position: relative;
     overflow: hidden;
+  }
+  #canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
   }
   /* 4隅配置用の共通スタイル */
   .corner-image {
