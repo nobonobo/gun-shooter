@@ -70,9 +70,26 @@
 
 <svelte:head>
   <title>{data.title}</title>
+  <style global>
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    body > div[style*="display: contents"] {
+      margin: 0;
+      padding: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      overflow: hidden;
+      display: block !important;
+    }
+  </style>
 </svelte:head>
 
-<div class="container">
+<main class="container">
   <canvas id="canvas" bind:this={canvas}></canvas>
   <!-- 4隅に固定配置する画像 -->
   <img
@@ -95,32 +112,9 @@
     class="corner-image bottom-right"
     alt="右下"
   />
-</div>
+</main>
 
 <style>
-  :global(body) {
-    margin: 0;
-    padding: 0;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-  }
-  :global(body) div {
-    margin: 0;
-    padding: 0;
-    width: 100vw !important;
-    height: 100vh !important;
-    overflow: hidden;
-    display: block !important;
-  }
-  :global(.contents) {
-    margin: 0;
-    padding: 0;
-    width: 100vw !important;
-    height: 100vh !important;
-    overflow: hidden;
-    display: block !important;
-  }
   .container {
     margin: 0;
     padding: 0;
