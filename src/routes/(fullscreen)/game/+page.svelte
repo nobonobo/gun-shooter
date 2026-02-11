@@ -54,7 +54,8 @@
     rafId = requestAnimationFrame(animate);
   }
 
-  onMount(() => {
+  onMount(async () => {
+    await globalThis.WaitGo();
     ctx = canvas.getContext("2d");
     rafId = requestAnimationFrame(animate);
   });
