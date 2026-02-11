@@ -41,6 +41,11 @@
     inform = JSON.parse(await globalThis.Go.Inform());
     console.log(inform);
   }
+  function fullscreen() {
+    if (document.fullscreenEnabled) {
+      document.documentElement.requestFullscreen();
+    }
+  }
 </script>
 
 <svelte:head>
@@ -49,8 +54,10 @@
 <div class="justify-center">
   <nav class="btn-group p-4 md:flex-row">
     <a href="{base}/" class="btn preset-filled-error-500">Quit</a>
-    <a href="{base}/game?hostID={hostID}" class="btn preset-filled-primary-500"
-      >Game</a
+    <a
+      href="{base}/game?hostID={hostID}"
+      class="btn preset-filled-primary-500"
+      on:click={fullscreen}>Game</a
     >
   </nav>
   <div class="flex gap-4">
