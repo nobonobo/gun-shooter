@@ -6,25 +6,12 @@
   const hostID = browser ? $page.url.searchParams.get("hostID") : "";
   let canvas;
   let ctx;
-  let width = 0;
-  let height = 0;
   let rafId = 0;
-
-  // イベントリスナーの参照を保持
-  let resizeHandler;
-
-  function resize() {
-    width = window.innerWidth;
-    height = window.innerHeight;
-    console.log("resize:", width, height);
-    if (canvas) {
-      canvas.width = width;
-      canvas.height = height;
-    }
-  }
 
   function draw(entries) {
     if (!ctx) return;
+    const width = canvas.width;
+    const height = canvas.height;
 
     // クリア
     ctx.fillStyle = "#f0f0f0";
@@ -68,17 +55,11 @@
   }
 
   onMount(() => {
-    resizeHandler = resize;
-    resize();
-    window.addEventListener("resize", resizeHandler);
     ctx = canvas.getContext("2d");
     rafId = requestAnimationFrame(animate);
   });
 
   onDestroy(async () => {
-    if (resizeHandler) {
-      window.removeEventListener("resize", resizeHandler);
-    }
     if (rafId) cancelAnimationFrame(rafId);
     if (browser) {
       await globalThis.Go.Close();
@@ -146,7 +127,6 @@
     overflow: hidden;
   }
   #canvas {
-    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
