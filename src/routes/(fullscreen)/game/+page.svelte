@@ -79,7 +79,9 @@
       window.removeEventListener("resize", resizeHandler);
     }
     if (rafId) cancelAnimationFrame(rafId);
-    await globalThis.Go.Close();
+    if (browser) {
+      await globalThis.Go.Close();
+    }
   });
 </script>
 
