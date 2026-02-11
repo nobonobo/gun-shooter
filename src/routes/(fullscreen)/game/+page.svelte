@@ -72,7 +72,7 @@
   <title>{data.title}</title>
 </svelte:head>
 
-<main class="container">
+<div class="container">
   <canvas id="canvas" bind:this={canvas}></canvas>
   <!-- 4隅に固定配置する画像 -->
   <img
@@ -95,7 +95,7 @@
     class="corner-image bottom-right"
     alt="右下"
   />
-</main>
+</div>
 
 <style>
   :global(body) {

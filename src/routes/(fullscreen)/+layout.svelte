@@ -7,4 +7,16 @@
 <svelte:head>
   <link rel="icon" href={favicon} />
 </svelte:head>
-{@render children()}
+<div class="page-container">
+  {@render children()}
+</div>
+
+<style>
+  .page-container {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+</style>
