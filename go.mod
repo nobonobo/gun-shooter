@@ -2,13 +2,13 @@ module github.com/nobonobo/gun-shooter
 
 go 1.25.6
 
-require github.com/nobonobo/rtcconnect v0.0.0-20260210162923-8ae6bc7af80a
+require github.com/nobonobo/rtcconnect v0.0.0-20260211011237-44247a42c9dd
 
 require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/nobonobo/operator v0.0.0-20260210142439-fc433f851463 // indirect
 	github.com/pion/datachannel v1.6.0 // indirect
-	github.com/pion/dtls/v3 v3.0.10 // indirect
+	github.com/pion/dtls/v3 v3.1.0 // indirect
 	github.com/pion/ice/v4 v4.2.0 // indirect
 	github.com/pion/interceptor v0.1.44 // indirect
 	github.com/pion/logging v0.2.4 // indirect
