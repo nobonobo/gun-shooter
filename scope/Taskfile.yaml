@@ -1,0 +1,34 @@
+version: '3'
+
+vars:
+  APP_NAME: "scope"
+  DIST_DIR: "../dist/scope"
+
+tasks:
+  wasm:
+    desc: Build for Scope Frontend
+    env:
+      GOOS: js
+      GOARCH: wasm
+    cmds:
+      - go build -o main.wasm .
+    sources:
+      - "**/*.go"
+    generates:
+      - "{{.APP_NAME}}.wasm"
+  dist:
+    deps: ["wasm"]
+    cmds:
+      - mkdir -p "{{.DIST_DIR}}"
+      - cp 'index.html' '{{.DIST_DIR}}/index.html'
+      - cp 'app.css' '{{.DIST_DIR}}/app.css'
+      - cp 'camera_para.dat' '{{.DIST_DIR}}/camera_para.dat'
+      - cp 'favicon.ico' '{{.DIST_DIR}}/favicon.ico'
+      - cp 'main.wasm' '{{.DIST_DIR}}/main.wasm'
+      - cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" '{{.DIST_DIR}}/wasm_exec.js'
+      - cp -Rf 'marker' '{{.DIST_DIR}}/marker'
+
+  web:
+    deps: ["wasm"]
+    cmds:
+      - python -m http.server 8080

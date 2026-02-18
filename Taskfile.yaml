@@ -1,0 +1,16 @@
+version: '3'
+
+includes:
+  host:
+    taskfile: ./host/Taskfile.yaml
+    dir: ./host
+  scope:
+    taskfile: ./scope/Taskfile.yaml
+    dir: ./scope
+
+tasks:
+  dist:
+    deps: ["host:dist", "scope:dist"]
+
+  web:
+    cmd: python -m http.server -d ./dist 8080
