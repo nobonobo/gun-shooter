@@ -257,7 +257,7 @@ func (app *Application) onResize() {
 
 func main() {
 	skip := GetParam("skip") != ""
-	fmt.Println("wasm instance started")
+	fmt.Println("wasm instance started: skip =", skip)
 	defer fmt.Println("wasm instance ended")
 	app := NewApplication()
 	defer app.Close()
