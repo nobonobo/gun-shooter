@@ -14,9 +14,8 @@ tasks:
       - go build -o main.wasm .
     sources:
       - "**/*.go"
-      - "./go.mod"
     generates:
-      - "{{.APP_NAME}}.wasm"
+      - "main.wasm"
   dist:
     deps: ["wasm"]
     cmds:

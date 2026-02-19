@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/mokiat/gog/opt"
@@ -70,10 +71,12 @@ func (c *playScreenComponent) OnCreate() {
 	c.createScene()
 	c.engine.SetActiveScene(c.scene)
 	c.engine.ResetDeltaTime()
+	Fullscreen(true)
 }
 
 func (c *playScreenComponent) OnDelete() {
 	c.engine.SetActiveScene(nil)
+	Fullscreen(false)
 }
 
 func (c *playScreenComponent) OnKeyboardEvent(element *ui.Element, event ui.KeyboardEvent) bool {
@@ -113,6 +116,45 @@ func (c *playScreenComponent) Render() co.Instance {
 					Top:   opt.V(0),
 					Left:  opt.V(0),
 					Right: opt.V(0),
+				})
+			}))
+		}
+
+		// Marker Images in Corners
+		for i := 0; i < 4; i++ {
+			imagePath := fmt.Sprintf("ui/images/pattern-marker_%d.png", i)
+			var layoutData layout.Data
+			switch i {
+			case 0: // Top-Left
+				layoutData = layout.Data{
+					Top:  opt.V(0),
+					Left: opt.V(0),
+				}
+			case 1: // Top-Right
+				layoutData = layout.Data{
+					Top:   opt.V(0),
+					Right: opt.V(0),
+				}
+			case 2: // Bottom-Right
+				layoutData = layout.Data{
+					Bottom: opt.V(0),
+					Left:   opt.V(0),
+				}
+			case 3: // Bottom-Left
+				layoutData = layout.Data{
+					Bottom: opt.V(0),
+					Right:  opt.V(0),
+				}
+			}
+			layoutData.Width = opt.V(200)
+			layoutData.Height = opt.V(200)
+
+			co.WithChild(fmt.Sprintf("marker-%d", i), co.New(std.Picture, func() {
+				co.WithLayoutData(layoutData)
+				co.WithData(std.PictureData{
+					BackgroundColor: opt.V(ui.Transparent()),
+					Image:           co.OpenImage(c.Scope(), imagePath),
+					Mode:            std.ImageModeFit,
 				})
 			}))
 		}

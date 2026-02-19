@@ -43,7 +43,6 @@ tasks:
     sources:
       - "./cmd/game/*.go"
       - "./ui/**/*.go"
-      - "./go.mod"
     generates:
       - "./assets/web/main.wasm"
 
@@ -78,6 +77,5 @@ tasks:
     sources:
       - "./cmd/game/*.go"
       - "./ui/**/*.go"
-      - "./go.mod"
     generates:
       - "{{.DIST_DIR}}/web/main.wasm"

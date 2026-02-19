@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -10,7 +11,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nobonobo/gun-shooter/schema"
 	"github.com/nobonobo/rtcconnect/node"
+	"github.com/pion/webrtc/v4"
 )
 
 type Application struct {
@@ -27,7 +30,6 @@ type Application struct {
 	node         *node.Node
 	ctx          context.Context
 	cancel       context.CancelFunc
-	connected    bool
 	cnt          int
 	OnUpdate     func([4]Marker)
 }
@@ -48,46 +50,41 @@ func NewApplication() *Application {
 			"marker/pattern-marker_3.patt",
 			"marker/pattern-marker_2.patt",
 		},
-		uid:       uid.String(),
-		name:      name,
-		dest:      dest,
-		node:      n,
-		ctx:       context.Background(),
-		cancel:    func() {},
-		connected: false,
-		OnUpdate:  func(markers [4]Marker) {},
+		uid:      uid.String(),
+		name:     name,
+		dest:     dest,
+		node:     n,
+		ctx:      context.Background(),
+		cancel:   func() {},
+		OnUpdate: func(markers [4]Marker) {},
 	}
 	return app
 }
 
 func (app *Application) Publish(data []byte) error {
-	if !app.connected {
-		return nil
-	}
 	app.cnt++
 	if app.cnt%100 == 0 {
 		fmt.Println("publish:", string(data))
 	}
-	return app.node.DataChannel().Send(data)
+	dc := app.node.DataChannel()
+	if dc.ReadyState() != webrtc.DataChannelStateOpen {
+		return fmt.Errorf("data channel not open: %s", dc.ReadyState())
+	}
+	return dc.Send(data)
 }
 
 func (app *Application) Connect(ctx context.Context) error {
+	//ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	err := app.node.Connect(ctx, app.dest)
 	if err != nil {
+		//cancel()
 		return err
 	}
-	app.node.DataChannel().OnOpen(func() {
-		fmt.Println("data channel open")
-		app.connected = true
-	})
-	app.node.DataChannel().OnClose(func() {
-		fmt.Println("data channel close")
-		app.connected = false
-	})
 	return nil
 }
 
 func (app *Application) Close() error {
+	log.Println("application closed")
 	return app.node.Close()
 }
 
@@ -133,10 +130,14 @@ func (app *Application) initARContext() {
 	})
 	app.arToolkitSrc = arSource
 	initCallback := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		track := arSource.Get("domElement").Call("captureStream").Call("getVideoTracks").Index(0)
+		cap := track.Call("getCapabilities")
+		console.Call("log", "track:", cap)
 		ctx := THREEx.Get("ArToolkitContext").New(map[string]interface{}{
 			"cameraParametersUrl": "camera_para.dat",
 			"detectionMode":       "mono",
 			"matrixCodeType":      js.Null(),
+			"maxDetectionRate":    30,
 		})
 		app.renderer.Get("domElement").Set("width", arSource.Get("domElement").Get("videoWidth"))
 		app.renderer.Get("domElement").Set("height", arSource.Get("domElement").Get("videoHeight"))
@@ -255,8 +256,11 @@ func (app *Application) onResize() {
 }
 
 func main() {
+	fmt.Println("wasm instance started")
+	defer fmt.Println("wasm instance ended")
+	app := NewApplication()
+	defer app.Close()
 	go func() {
-		app := NewApplication()
 		connect := false
 		for i := 0; i < 3; i++ {
 			fmt.Println("connecting:", app.uid)
@@ -271,8 +275,6 @@ func main() {
 		if !connect {
 			log.Fatal("failed to connect")
 		}
-		fmt.Println("connected!!")
-		defer app.Close()
 		w, h := window.Get("innerWidth").Float(), window.Get("innerHeight").Float()
 		app.OnUpdate = func(markers [4]Marker) {
 			points := compensateMarkers(markers)
@@ -284,18 +286,16 @@ func main() {
 				y = 0.5
 			}
 			document.Call("getElementById", "message").Set("innerText", fmt.Sprintf("x:%5.2f, y:%5.2f", x, y))
-			/*
-					info := schema.Info{
-					ID:   app.uid,
-					Name: app.name,
-					X:    x,
-					Y:    y,
-				}
-					b, _ := json.Marshal(info)
-					if err := app.Publish(b); err != nil {
-						console.Call("error", err.Error())
-					}
-			*/
+			info := schema.Info{
+				ID:   app.uid,
+				Name: app.name,
+				X:    x,
+				Y:    y,
+			}
+			b, _ := json.Marshal(info)
+			if err := app.Publish(b); err != nil {
+				console.Call("error", err.Error())
+			}
 		}
 		app.Run()
 	}()

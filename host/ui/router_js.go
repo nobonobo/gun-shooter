@@ -28,6 +28,21 @@ func init() {
 	}
 }
 
+func Fullscreen(on bool) {
+	elm := document.Get("documentElement")
+	if on {
+		var f js.Func
+		f = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+			defer f.Release()
+			window.Call("alert", "fullscreen error:", args[0])
+			return nil
+		})
+		elm.Call("requestFullscreen").Call("catch", f)
+	} else {
+		document.Call("exitFullscreen")
+	}
+}
+
 func BaseURL() string {
 	return location.Get("origin").String() + location.Get("pathname").String()
 }

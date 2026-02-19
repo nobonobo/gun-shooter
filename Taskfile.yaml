@@ -10,7 +10,7 @@ includes:
 
 tasks:
   dist:
-    deps: ["host:dist", "scope:dist"]
+    deps: ["scope:dist", "host:dist"]
 
   web:
     cmd: python -m http.server -d ./dist 8080
