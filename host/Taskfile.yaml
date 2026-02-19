@@ -73,7 +73,7 @@ tasks:
     deps: ["wasm", "webpack"]
     cmds:
       - mkdir -p "{{.DIST_DIR}}"
-      - cp -Rf "./assets" "{{.DIST_DIR}}"
+      - cp -Rf ./assets/. "{{.DIST_DIR}}/"
     sources:
       - "./cmd/game/*.go"
       - "./ui/**/*.go"

@@ -11,6 +11,9 @@ includes:
 tasks:
   dist:
     deps: ["scope:dist", "host:dist"]
+    cmds:
+      - touch ./dist/.nojekyll
+
 
   web:
     cmd: python -m http.server -d ./dist 8080
