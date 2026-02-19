@@ -70,7 +70,7 @@ tasks:
       - go run 'github.com/mokiat/httpserv@v1.0.0' -dir './assets' -host '127.0.0.1'
 
   dist:
-    deps: ["wasm", "webpack"]
+    deps: ["pack", "wasm", "webpack"]
     cmds:
       - mkdir -p "{{.DIST_DIR}}"
       - cp -Rf ./assets/. "{{.DIST_DIR}}/"
