@@ -98,7 +98,16 @@ func (c *roomScreenComponent) OnCreate() {
 			})
 		})
 	}
-
+	ctx, cancel := context.WithCancel(context.Background())
+	c.ctx = ctx
+	c.cancel = cancel
+	go func() {
+		log.Println("listen start:", c.host.ID())
+		defer log.Println("listen stop:", c.host.ID())
+		if err := c.host.Listen(ctx); err != nil {
+			log.Println("failed to listen", err)
+		}
+	}()
 	go func() {
 		ticker := time.NewTicker(time.Second)
 		defer ticker.Stop()

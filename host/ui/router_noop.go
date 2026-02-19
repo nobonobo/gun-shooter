@@ -9,6 +9,8 @@ import (
 	"runtime"
 )
 
+func Fullscreen(on bool) {}
+
 func BaseURL() string {
 	return "https://nobonobo.github.io/gun-shooter/"
 }
