@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/url"
 	"syscall/js"
 )
 
@@ -11,7 +12,22 @@ var (
 	console  = js.Global().Get("console")
 	THREE    = js.Global().Get("THREE")
 	THREEx   = js.Global().Get("THREEx")
+	params   url.Values
 )
+
+func init() {
+	u, _ := url.Parse(location.Get("href").String())
+	params = u.Query()
+}
+
+func GetParam(key string) string {
+	return params.Get(key)
+}
+
+func SetParam(key, value string) {
+	params.Set(key, value)
+	location.Set("search", params.Encode())
+}
 
 type goObject struct {
 	jsValue js.Value

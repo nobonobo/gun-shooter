@@ -261,19 +261,21 @@ func main() {
 	app := NewApplication()
 	defer app.Close()
 	go func() {
-		connect := false
-		for i := 0; i < 3; i++ {
-			fmt.Println("connecting:", app.uid)
-			err := app.Connect(context.Background())
-			if err == nil {
-				connect = true
-				break
+		if GetParam("skip") == "" {
+			connect := false
+			for i := 0; i < 3; i++ {
+				fmt.Println("connecting:", app.uid)
+				err := app.Connect(context.Background())
+				if err == nil {
+					connect = true
+					break
+				}
+				log.Println(err)
+				time.Sleep(5 * time.Second)
 			}
-			log.Println(err)
-			time.Sleep(5 * time.Second)
-		}
-		if !connect {
-			log.Fatal("failed to connect")
+			if !connect {
+				log.Fatal("failed to connect")
+			}
 		}
 		w, h := window.Get("innerWidth").Float(), window.Get("innerHeight").Float()
 		app.OnUpdate = func(markers [4]Marker) {
