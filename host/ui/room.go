@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"reflect"
+	"sort"
 	"time"
 
 	"github.com/mokiat/gog/opt"
@@ -41,8 +43,8 @@ type roomScreenComponent struct {
 	titleFont *ui.Font
 	textFont  *ui.Font
 	actives   map[string]struct {
-		time time.Time
-		name string
+		Time time.Time
+		Info *schema.Info
 	}
 	members []string
 	host    *node.Node
@@ -62,10 +64,9 @@ func (c *roomScreenComponent) OnCreate() {
 	c.textFont = co.OpenFont(c.Scope(), "ui:///roboto-regular.ttf")
 	c.host = node.NewHost(GetParam("id"))
 	c.actives = map[string]struct {
-		time time.Time
-		name string
+		Time time.Time
+		Info *schema.Info
 	}{}
-	eventBus := co.TypedValue[*mvc.EventBus](c.Scope())
 	c.host.OnConnected = func(peer *node.Node) {
 		id := peer.ID()
 		peer.PeerConnection().OnDataChannel(func(dc *webrtc.DataChannel) {
@@ -85,20 +86,13 @@ func (c *roomScreenComponent) OnCreate() {
 					log.Println("data channel message:", id, info)
 				}
 				c.actives[id] = struct {
-					time time.Time
-					name string
+					Time time.Time
+					Info *schema.Info
 				}{
-					time: time.Now(),
-					name: info.Name,
+					Time: time.Now(),
+					Info: info,
 				}
-				members := []string{}
-				for _, active := range c.actives {
-					if time.Since(active.time) > 5*time.Second {
-						continue
-					}
-					members = append(members, active.name)
-				}
-				eventBus.Notify(RoomMembersUpdatedEvent{Members: members})
+				c.UpdateMembers()
 			})
 		})
 	}
@@ -112,6 +106,30 @@ func (c *roomScreenComponent) OnCreate() {
 			log.Println("failed to listen", err)
 		}
 	}()
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				c.UpdateMembers()
+			}
+		}
+	}()
+}
+
+func (c *roomScreenComponent) UpdateMembers() {
+	members := []string{}
+	for _, active := range c.actives {
+		if time.Since(active.Time) > 5*time.Second {
+			continue
+		}
+		members = append(members, active.Info.Name)
+	}
+	eventBus := co.TypedValue[*mvc.EventBus](c.Scope())
+	eventBus.Notify(RoomMembersUpdatedEvent{Members: members})
 }
 
 func (c *roomScreenComponent) OnDelete() {
@@ -256,6 +274,10 @@ func (c *roomScreenComponent) Render() co.Instance {
 func (c *roomScreenComponent) OnEvent(event mvc.Event) {
 	switch e := event.(type) {
 	case RoomMembersUpdatedEvent:
+		sort.StringSlice(e.Members).Sort()
+		if reflect.DeepEqual(c.members, e.Members) {
+			return
+		}
 		c.members = e.Members
 		c.Invalidate() // 再描画を要求
 	}
