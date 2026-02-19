@@ -39,7 +39,9 @@ func Fullscreen(on bool) {
 		})
 		elm.Call("requestFullscreen").Call("catch", f)
 	} else {
-		go document.Call("exitFullscreen")
+		if document.Get("fullscreenElement").Truthy() {
+			go document.Call("exitFullscreen")
+		}
 	}
 }
 
