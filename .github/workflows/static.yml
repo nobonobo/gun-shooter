@@ -32,16 +32,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          node-version: '20'   # 使いたいバージョンに変更
+          go-version: 'stable'
 
-      - name: Install dependencies
-        run: npm ci            # or npm install
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
-        run: npm run build     # ./build に出力される想定
+        run: task dist
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -49,7 +52,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './build'
+          path: './dist'
 
       - name: Deploy to GitHub Pages
         id: deployment
