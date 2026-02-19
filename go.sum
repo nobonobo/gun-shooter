@@ -123,6 +123,8 @@ github.com/nobonobo/rtcconnect v0.0.0-20260219085100-7f132bda954b h1:ZAWeisaHrVh
 github.com/nobonobo/rtcconnect v0.0.0-20260219085100-7f132bda954b/go.mod h1:XxuNUHwdn9Ajn1xJorek7P08mKIRHAuKueZCwCtVVT0=
 github.com/nobonobo/rtcconnect v0.0.0-20260219090249-3a3dc2c6fdbb h1:Js39uI5+dzh5DhmdKHkR/RK7LubR4Zl8n8++x45AGvg=
 github.com/nobonobo/rtcconnect v0.0.0-20260219090249-3a3dc2c6fdbb/go.mod h1:XxuNUHwdn9Ajn1xJorek7P08mKIRHAuKueZCwCtVVT0=
+github.com/nobonobo/rtcconnect v0.0.0-20260219102126-643c4e1aa17e h1:Z/t/sNvTrkc0dUGbKo8QGc3PDUq1lF1CvW9WIVGtYBg=
+github.com/nobonobo/rtcconnect v0.0.0-20260219102126-643c4e1aa17e/go.mod h1:XxuNUHwdn9Ajn1xJorek7P08mKIRHAuKueZCwCtVVT0=
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
 github.com/onsi/ginkgo/v2 v2.27.2 h1:LzwLj0b89qtIy6SSASkzlNvX6WktqurSHwkk2ipF/Ns=
 github.com/onsi/ginkgo/v2 v2.27.2/go.mod h1:ArE1D/XhNXBXCBkKOLkbsb2c81dQHCRcF5zwn/ykDRo=
