@@ -256,12 +256,13 @@ func (app *Application) onResize() {
 }
 
 func main() {
+	skip := GetParam("skip") != ""
 	fmt.Println("wasm instance started")
 	defer fmt.Println("wasm instance ended")
 	app := NewApplication()
 	defer app.Close()
 	go func() {
-		if GetParam("skip") == "" {
+		if !skip {
 			connect := false
 			for i := 0; i < 3; i++ {
 				fmt.Println("connecting:", app.uid)
@@ -288,15 +289,17 @@ func main() {
 				y = 0.5
 			}
 			document.Call("getElementById", "message").Set("innerText", fmt.Sprintf("x:%5.2f, y:%5.2f", x, y))
-			info := schema.Info{
-				ID:   app.uid,
-				Name: app.name,
-				X:    x,
-				Y:    y,
-			}
-			b, _ := json.Marshal(info)
-			if err := app.Publish(b); err != nil {
-				console.Call("error", err.Error())
+			if !skip {
+				info := schema.Info{
+					ID:   app.uid,
+					Name: app.name,
+					X:    x,
+					Y:    y,
+				}
+				b, _ := json.Marshal(info)
+				if err := app.Publish(b); err != nil {
+					console.Call("error", err.Error())
+				}
 			}
 		}
 		app.Run()
