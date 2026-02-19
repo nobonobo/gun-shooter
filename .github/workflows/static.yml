@@ -37,6 +37,11 @@ jobs:
         with:
           go-version: 'stable'
 
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxcursor-dev libxinerama-dev libxrandr-dev libxi-dev libgl-dev
+
       - name: Install Task
         uses: arduino/setup-task@v2
         with:
