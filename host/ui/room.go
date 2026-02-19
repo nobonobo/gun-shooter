@@ -42,31 +42,36 @@ type roomScreenComponent struct {
 
 	titleFont *ui.Font
 	textFont  *ui.Font
-	actives   map[string]struct {
-		Time time.Time
-		Info *schema.Info
-	}
-	members []string
-	host    *node.Node
-	ctx     context.Context
-	cancel  func()
+	members   []string
+
+	host   *node.Node
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	globalState GlobalState
 }
 
 func (c *roomScreenComponent) OnCreate() {
-	globalState := co.TypedValue[GlobalState](c.Scope())
-	c.engine = globalState.Engine
-	c.resourceSet = globalState.ResourceSet
+	c.globalState = co.TypedValue[GlobalState](c.Scope())
+	c.engine = c.globalState.Engine
+	c.resourceSet = c.globalState.ResourceSet
 
 	componentData := co.GetData[RoomScreenData](c.Properties())
 	c.app = componentData.App
 
 	c.titleFont = co.OpenFont(c.Scope(), "ui:///roboto-bold.ttf")
 	c.textFont = co.OpenFont(c.Scope(), "ui:///roboto-regular.ttf")
+
 	c.host = node.NewHost(GetParam("id"))
-	c.actives = map[string]struct {
-		Time time.Time
-		Info *schema.Info
-	}{}
+	c.ctx, c.cancel = context.WithCancel(context.Background())
+	go func() {
+		log.Println("listen start:", c.host.ID())
+		defer log.Println("listen stop:", c.host.ID())
+		if err := c.host.Listen(c.ctx); err != nil {
+			log.Println("failed to listen", err)
+		}
+	}()
+
 	c.host.OnConnected = func(peer *node.Node) {
 		id := peer.ID()
 		peer.PeerConnection().OnDataChannel(func(dc *webrtc.DataChannel) {
@@ -85,10 +90,7 @@ func (c *roomScreenComponent) OnCreate() {
 				if cnt%1000 == 0 {
 					log.Println("data channel message:", id, info)
 				}
-				c.actives[id] = struct {
-					Time time.Time
-					Info *schema.Info
-				}{
+				c.globalState.Actives[id] = ActiveMember{
 					Time: time.Now(),
 					Info: info,
 				}
@@ -96,22 +98,13 @@ func (c *roomScreenComponent) OnCreate() {
 			})
 		})
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	c.ctx = ctx
-	c.cancel = cancel
-	go func() {
-		log.Println("listen start:", c.host.ID())
-		defer log.Println("listen stop:", c.host.ID())
-		if err := c.host.Listen(ctx); err != nil {
-			log.Println("failed to listen", err)
-		}
-	}()
+
 	go func() {
 		ticker := time.NewTicker(time.Second)
 		defer ticker.Stop()
 		for {
 			select {
-			case <-ctx.Done():
+			case <-c.ctx.Done():
 				return
 			case <-ticker.C:
 				c.UpdateMembers()
@@ -122,7 +115,7 @@ func (c *roomScreenComponent) OnCreate() {
 
 func (c *roomScreenComponent) UpdateMembers() {
 	members := []string{}
-	for _, active := range c.actives {
+	for _, active := range c.globalState.Actives {
 		if time.Since(active.Time) > 5*time.Second {
 			continue
 		}

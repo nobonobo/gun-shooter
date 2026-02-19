@@ -54,6 +54,8 @@ type playScreenComponent struct {
 
 	sceneData *PlayData
 	scene     *game.Scene
+
+	globalState GlobalState
 }
 
 var _ ui.ElementKeyboardHandler = (*playScreenComponent)(nil)
@@ -61,9 +63,9 @@ var _ ui.ElementKeyboardHandler = (*playScreenComponent)(nil)
 func (c *playScreenComponent) OnCreate() {
 	c.debugVisible = false
 
-	globalState := co.TypedValue[GlobalState](c.Scope())
-	c.engine = globalState.Engine
-	c.resourceSet = globalState.ResourceSet
+	c.globalState = co.TypedValue[GlobalState](c.Scope())
+	c.engine = c.globalState.Engine
+	c.resourceSet = c.globalState.ResourceSet
 
 	componentData := co.GetData[PlayScreenData](c.Properties())
 	c.app = componentData.App

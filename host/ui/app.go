@@ -17,6 +17,7 @@ func BootstrapApplication(window *ui.Window, gameController *game.Controller) {
 	scope = co.TypedValueScope(scope, GlobalState{
 		Engine:      engine,
 		ResourceSet: engine.CreateResourceSet(),
+		Actives:     make(map[string]ActiveMember),
 	})
 	co.Initialize(scope, co.New(Application, nil))
 }
