@@ -32,6 +32,7 @@ var defaultQRCodeCallbackData = QRCodeCallbackData{
 
 type qrCodeComponent struct {
 	co.BaseComponent
+	std.BaseButtonComponent
 
 	data    QRCodeData
 	qrImage *ui.Image
@@ -40,9 +41,11 @@ type qrCodeComponent struct {
 
 func (c *qrCodeComponent) OnUpsert() {
 	data := co.GetOptionalData(c.Properties(), defaultQRCodeData)
+	callbacks := co.GetOptionalCallbackData(c.Properties(), defaultQRCodeCallbackData)
 
 	c.data = data
 	c.text = data.Text
+	c.SetOnClickFunc(callbacks.OnClick)
 	c.updateQRImage()
 }
 
@@ -75,6 +78,7 @@ func (c *qrCodeComponent) Render() co.Instance {
 		co.WithLayoutData(c.Properties().LayoutData())
 		co.WithData(std.ElementData{
 			Essence:   c,
+			Enabled:   opt.V(true),
 			Padding:   padding,
 			IdealSize: opt.V(ui.NewSize(int(c.data.Size), int(c.data.Size))),
 		})

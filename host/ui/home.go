@@ -1,6 +1,10 @@
 package ui
 
 import (
+	"log"
+	"sync"
+	"time"
+
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/gomath/sprec"
 	"github.com/mokiat/lacking/game"
@@ -40,8 +44,9 @@ type homeScreenComponent struct {
 	engine      *game.Engine
 	resourceSet *game.ResourceSet
 
-	sceneData *HomeData
-	scene     *game.Scene
+	sceneData  *HomeData
+	scene      *game.Scene
+	initRouter func()
 }
 
 func (c *homeScreenComponent) OnCreate() {
@@ -58,6 +63,9 @@ func (c *homeScreenComponent) OnCreate() {
 
 	c.engine.SetActiveScene(c.scene)
 	c.engine.ResetDeltaTime()
+	c.initRouter = sync.OnceFunc(func() {
+		time.AfterFunc(time.Millisecond, func() { initRouter(c) })
+	})
 }
 
 func (c *homeScreenComponent) OnDelete() {
@@ -65,6 +73,7 @@ func (c *homeScreenComponent) OnDelete() {
 }
 
 func (c *homeScreenComponent) Render() co.Instance {
+	defer c.initRouter()
 	return co.New(std.Element, func() {
 		co.WithData(std.ElementData{
 			Layout: layout.Anchor(),
@@ -94,12 +103,12 @@ func (c *homeScreenComponent) Render() co.Instance {
 					}),
 				})
 
-				co.WithChild("play-button", co.New(widget.Button, func() {
+				co.WithChild("room-button", co.New(widget.Button, func() {
 					co.WithData(widget.ButtonData{
-						Text: "Play",
+						Text: "Room",
 					})
 					co.WithCallbackData(widget.ButtonCallbackData{
-						OnClick: c.onPlayClicked,
+						OnClick: c.onRoomClicked,
 					})
 				}))
 
@@ -166,6 +175,10 @@ func (c *homeScreenComponent) createCamera(scene *graphics.Scene) *graphics.Came
 	return result
 }
 
+func (c *homeScreenComponent) onRoomClicked() {
+	c.app.SetActiveView(ViewNameRoom)
+}
+
 func (c *homeScreenComponent) onPlayClicked() {
 	promise := NewLoadingPromise(
 		co.Window(c.Scope()),
@@ -183,6 +196,7 @@ func (c *homeScreenComponent) onPlayClicked() {
 		ErrorViewName:   ViewNameError,
 	}
 	c.app.SetActiveView(ViewNameLoading)
+	log.Println("play clicked")
 }
 
 func (c *homeScreenComponent) onLicensesClicked() {

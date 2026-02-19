@@ -66,6 +66,11 @@ func (c *applicationComponent) Render() co.Instance {
 				App: c,
 			})
 		}))
+		co.WithChild(ViewNameRoom, co.New(RoomScreen, func() {
+			co.WithData(RoomScreenData{
+				App: c,
+			})
+		}))
 		co.WithChild(ViewNamePlay, co.New(PlayScreen, func() {
 			co.WithData(PlayScreenData{
 				App: c,
@@ -90,6 +95,7 @@ func (c *applicationComponent) SetActiveView(view ViewName) {
 	c.eventBus.Notify(ApplicationActiveViewChangedEvent{
 		ActiveView: view,
 	})
+	updateHash(view)
 }
 
 const (
@@ -98,6 +104,7 @@ const (
 	ViewNameLoading  ViewName = "loading"
 	ViewNameLicenses ViewName = "licenses"
 	ViewNameHome     ViewName = "home"
+	ViewNameRoom     ViewName = "room"
 	ViewNamePlay     ViewName = "play"
 )
 

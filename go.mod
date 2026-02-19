@@ -10,7 +10,7 @@ require (
 	github.com/mokiat/lacking-js v0.23.0
 	github.com/mokiat/lacking-native v0.23.0
 	github.com/mokiat/lacking-studio v0.23.0
-	github.com/nobonobo/rtcconnect v0.0.0-20260211011908-65c329b6e480
+	github.com/nobonobo/rtcconnect v0.0.0-20260219090249-3a3dc2c6fdbb
 )
 
 require (

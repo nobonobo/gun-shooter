@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"net/url"
 	"syscall/js"
 	"time"
@@ -24,6 +25,10 @@ type Application struct {
 	name         string
 	dest         string
 	node         *node.Node
+	ctx          context.Context
+	cancel       context.CancelFunc
+	connected    bool
+	cnt          int
 	OnUpdate     func([4]Marker)
 }
 
@@ -31,6 +36,9 @@ func NewApplication() *Application {
 	uid, _ := uuid.NewV6()
 	u, _ := url.Parse(location.Get("href").String())
 	name := u.Query().Get("name")
+	if name == "" {
+		name = "NoName"
+	}
 	dest := u.Query().Get("dest")
 	n := node.New(uid.String())
 	app := &Application{
@@ -40,17 +48,43 @@ func NewApplication() *Application {
 			"marker/pattern-marker_3.patt",
 			"marker/pattern-marker_2.patt",
 		},
-		uid:      uid.String(),
-		name:     name,
-		dest:     dest,
-		node:     n,
-		OnUpdate: func(markers [4]Marker) {},
+		uid:       uid.String(),
+		name:      name,
+		dest:      dest,
+		node:      n,
+		ctx:       context.Background(),
+		cancel:    func() {},
+		connected: false,
+		OnUpdate:  func(markers [4]Marker) {},
 	}
 	return app
 }
 
+func (app *Application) Publish(data []byte) error {
+	if !app.connected {
+		return nil
+	}
+	app.cnt++
+	if app.cnt%100 == 0 {
+		fmt.Println("publish:", string(data))
+	}
+	return app.node.DataChannel().Send(data)
+}
+
 func (app *Application) Connect(ctx context.Context) error {
-	return app.node.Connect(ctx, app.dest)
+	err := app.node.Connect(ctx, app.dest)
+	if err != nil {
+		return err
+	}
+	app.node.DataChannel().OnOpen(func() {
+		fmt.Println("data channel open")
+		app.connected = true
+	})
+	app.node.DataChannel().OnClose(func() {
+		fmt.Println("data channel close")
+		app.connected = false
+	})
+	return nil
 }
 
 func (app *Application) Close() error {
@@ -220,30 +254,50 @@ func (app *Application) onResize() {
 	}
 }
 
-const skip = true
-
 func main() {
-	app := NewApplication()
-	if !skip {
-		for range 3 {
+	go func() {
+		app := NewApplication()
+		connect := false
+		for i := 0; i < 3; i++ {
+			fmt.Println("connecting:", app.uid)
 			err := app.Connect(context.Background())
 			if err == nil {
+				connect = true
 				break
 			}
 			log.Println(err)
 			time.Sleep(5 * time.Second)
 		}
-	}
-	defer app.Close()
-	w, h := window.Get("innerWidth").Float(), window.Get("innerHeight").Float()
-	app.OnUpdate = func(markers [4]Marker) {
-		points := compensateMarkers(markers)
-		x, y := calc(points, w, h)
-		document.Call("getElementById", "message").Set("innerText", fmt.Sprintf("x:%5.2f, y:%5.2f", x, y))
-		if !skip {
-			app.node.Publish(context.Background(), app.dest, "markers", []byte(fmt.Sprintf(`{"name":"%s","x":%v,"y":%v}`, app.name, x, y)))
+		if !connect {
+			log.Fatal("failed to connect")
 		}
-	}
-	go app.Run()
+		fmt.Println("connected!!")
+		defer app.Close()
+		w, h := window.Get("innerWidth").Float(), window.Get("innerHeight").Float()
+		app.OnUpdate = func(markers [4]Marker) {
+			points := compensateMarkers(markers)
+			x, y := calc(points, w, h)
+			if math.IsNaN(x) {
+				x = 0.5
+			}
+			if math.IsNaN(y) {
+				y = 0.5
+			}
+			document.Call("getElementById", "message").Set("innerText", fmt.Sprintf("x:%5.2f, y:%5.2f", x, y))
+			/*
+					info := schema.Info{
+					ID:   app.uid,
+					Name: app.name,
+					X:    x,
+					Y:    y,
+				}
+					b, _ := json.Marshal(info)
+					if err := app.Publish(b); err != nil {
+						console.Call("error", err.Error())
+					}
+			*/
+		}
+		app.Run()
+	}()
 	select {}
 }

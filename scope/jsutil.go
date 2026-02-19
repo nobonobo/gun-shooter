@@ -8,6 +8,7 @@ var (
 	document = js.Global().Get("document")
 	window   = js.Global().Get("window")
 	location = js.Global().Get("location")
+	console  = js.Global().Get("console")
 	THREE    = js.Global().Get("THREE")
 	THREEx   = js.Global().Get("THREEx")
 )
