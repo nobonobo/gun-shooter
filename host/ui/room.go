@@ -83,17 +83,19 @@ func (c *roomScreenComponent) OnCreate() {
 			dc.OnClose(func() {
 				log.Println("data channel closed:", id)
 			})
-			cnt := 0
+			//cnt := 0
 			dc.OnMessage(func(msg webrtc.DataChannelMessage) {
 				var info *schema.Info
 				if err := json.Unmarshal(msg.Data, &info); err != nil {
 					log.Println("failed to unmarshal info:", err)
 					return
 				}
-				cnt++
-				if cnt%1000 == 0 {
-					log.Println("data channel message:", id, info)
-				}
+				/*
+					cnt++
+					if cnt%1000 == 0 {
+						log.Println("data channel message:", id, info)
+					}
+				*/
 				c.globalState.Actives[id] = ActiveMember{
 					Time: time.Now(),
 					Info: info,

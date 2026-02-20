@@ -60,6 +60,8 @@ type playScreenComponent struct {
 	screenWidth  int
 	screenHeight int
 
+	cnt int
+
 	globalState GlobalState
 }
 
@@ -82,7 +84,27 @@ func (c *playScreenComponent) OnCreate() {
 	c.createScene()
 	c.engine.SetActiveScene(c.scene)
 	c.engine.ResetDeltaTime()
+
 	Fullscreen(true)
+}
+
+var _ ui.ElementRenderHandler = (*playScreenComponent)(nil)
+
+func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
+	// 画面サイズを要素の現在のサイズに同期
+	c.screenWidth = element.Bounds().Width
+	c.screenHeight = element.Bounds().Height
+
+	c.cnt++
+	if c.cnt%100 == 0 {
+		for id, active := range c.globalState.Actives {
+			if time.Since(active.Time) > 5*time.Second {
+				continue
+			}
+			log.Println("active:", id, active.Info.Name, active.Info.X, active.Info.Y, active.Info.Fire)
+		}
+	}
+	c.Invalidate()
 }
 
 func (c *playScreenComponent) OnDelete() {
@@ -289,21 +311,3 @@ func (c *playScreenComponent) createCamera(scene *graphics.Scene) *graphics.Came
 
 // Temporary global storage for data across views
 var playSceneData *PlayData
-
-var cnt = 0
-
-func (c *playScreenComponent) OnUpdate(element *ui.Element) {
-	bounds := element.Bounds()
-	c.screenWidth = bounds.Width
-	c.screenHeight = bounds.Height
-	c.Invalidate()
-	cnt++
-	if cnt%100 == 0 {
-		for id, active := range c.globalState.Actives {
-			if time.Since(active.Time) > 5*time.Second {
-				continue
-			}
-			log.Println("active:", id, active.Info.Name, active.Info.X, active.Info.Y, active.Info.Fire)
-		}
-	}
-}
