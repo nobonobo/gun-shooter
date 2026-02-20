@@ -27,6 +27,8 @@ tasks:
       - cp 'main.wasm' '{{.DIST_DIR}}/main.wasm'
       - cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" '{{.DIST_DIR}}/wasm_exec.js'
       - cp -Rf 'marker' '{{.DIST_DIR}}/marker'
+      - cp -Rf 'images' '{{.DIST_DIR}}/images'
+      - cp -Rf 'manifest.json' '{{.DIST_DIR}}/manifest.json'
 
   web:
     deps: ["wasm"]

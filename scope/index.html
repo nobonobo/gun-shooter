@@ -5,17 +5,23 @@
   <meta charset="utf-8">
   <title>Scope</title>
   <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-  <link rel="stylesheet" href="app.css">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="app.css" data-timestamp="auto">
   <link rel="icon" href="./favicon.ico">
   <!-- <script type="module" src="./app.js"></script> -->
   <script src="wasm_exec.js"></script>
   <script type="module">
+    document.querySelectorAll('link[data-timestamp="auto"]').forEach(a => {
+      a.href += (a.href.includes('?') ? '&' : '?') + 't=' + Date.now();
+    });
     import * as THREE from "https://esm.sh/three@0.164.0?target=es2022";
     globalThis.THREE = THREE;
     import { THREEx } from "https://esm.sh/@ar-js-org/ar.js-threejs";
     globalThis.THREEx = THREEx;
     const go = new Go();
-    WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject)
+    WebAssembly.instantiateStreaming(fetch("main.wasm?t=" + new Date().getTime()), go.importObject)
       .then((result) => {
         go.run(result.instance);
       })

@@ -74,10 +74,8 @@ func (app *Application) Publish(data []byte) error {
 }
 
 func (app *Application) Connect(ctx context.Context) error {
-	//ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	err := app.node.Connect(ctx, app.dest)
 	if err != nil {
-		//cancel()
 		return err
 	}
 	return nil
@@ -100,6 +98,7 @@ func (app *Application) Run() {
 		"alpha":     true,
 	})
 	app.renderer = renderer
+	js.Global().Set("renderer", renderer)
 	renderer.Call("setPixelRatio", window.Get("devicePixelRatio"))
 	renderer.Call("setSize", window.Get("innerWidth"), window.Get("innerHeight"))
 
@@ -116,10 +115,13 @@ func (app *Application) Run() {
 		app.render()
 		return nil
 	}))
-	window.Call("addEventListener", "resize", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	// リサイズイベント
+	resize := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		app.onResize()
 		return nil
-	}))
+	})
+	window.Call("addEventListener", "resize", resize)
+	window.Call("addEventListener", "orientationchange", resize)
 }
 
 func (app *Application) initARContext() {
@@ -130,9 +132,11 @@ func (app *Application) initARContext() {
 	})
 	app.arToolkitSrc = arSource
 	initCallback := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		track := arSource.Get("domElement").Call("captureStream").Call("getVideoTracks").Index(0)
-		cap := track.Call("getCapabilities")
-		console.Call("log", "track:", cap)
+		/*
+			track := arSource.Get("domElement").Call("captureStream").Call("getVideoTracks").Index(0)
+			cap := track.Call("getCapabilities")
+			console.Call("log", "track:", cap)
+		*/
 		ctx := THREEx.Get("ArToolkitContext").New(map[string]interface{}{
 			"cameraParametersUrl": "camera_para.dat",
 			"detectionMode":       "mono",
@@ -197,12 +201,6 @@ func (app *Application) createMarkers() {
 		app.render()
 		return nil
 	}))
-
-	// リサイズイベント
-	window.Call("addEventListener", "resize", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		app.onResize()
-		return nil
-	}))
 }
 
 func (app *Application) projection(marker js.Value, width, height float64) Marker {
@@ -246,10 +244,20 @@ func (app *Application) onResize() {
 	if !app.arToolkitSrc.Truthy() || !app.arToolkitSrc.Get("ready").Truthy() {
 		return
 	}
-	println("resized!")
-	app.renderer.Call("setSize", window.Get("innerWidth"), window.Get("innerHeight"))
+	w, h := window.Get("innerWidth"), window.Get("innerHeight")
+	canvas := app.renderer.Get("domElement")
+	video := app.arToolkitSrc.Get("domElement")
+	video.Get("style").Set("width", w)
+	video.Get("style").Set("height", h)
+	app.renderer.Call("setSize", w, h)
 	app.arToolkitSrc.Call("onResizeElement")
-	app.arToolkitSrc.Call("copyElementSizeTo", app.renderer.Get("domElement"))
+	app.arToolkitSrc.Call("copyElementSizeTo", canvas)
+
+	canvas.Get("style").Set("width", video.Get("style").Get("width"))
+	canvas.Get("style").Set("height", video.Get("style").Get("height"))
+	canvas.Get("style").Set("margin-left", video.Get("style").Get("margin-left"))
+	canvas.Get("style").Set("margin-top", video.Get("style").Get("margin-top"))
+
 	if app.arToolkitCtx.Truthy() {
 		app.camera.Get("projectionMatrix").Call("copy", app.arToolkitCtx.Call("getProjectionMatrix"))
 	}
@@ -261,6 +269,7 @@ func main() {
 	defer fmt.Println("wasm instance ended")
 	app := NewApplication()
 	defer app.Close()
+	cnt := 0
 	go func() {
 		if !skip {
 			connect := false
@@ -288,7 +297,14 @@ func main() {
 			if math.IsNaN(y) {
 				y = 0.5
 			}
-			document.Call("getElementById", "message").Set("innerText", fmt.Sprintf("x:%5.2f, y:%5.2f", x, y))
+			if cnt%10 == 0 {
+				elm := document.Call("getElementById", "message")
+				info := fmt.Sprintf("x:%5.2f, y:%5.2f", x, y)
+				if elm.Get("innerText").String() != info {
+					elm.Set("innerText", info)
+				}
+			}
+			cnt++
 			if !skip {
 				info := schema.Info{
 					ID:   app.uid,

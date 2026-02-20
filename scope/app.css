@@ -1,7 +1,8 @@
 body {
   margin: 0;
   padding: 0;
-  overflow: hidden
+  overflow: hidden;
+  background-color: black;
 }
 
 .center-hole-mask {
@@ -13,7 +14,7 @@ body {
   background:
     radial-gradient(circle 55vh at center,
       transparent 0%, transparent 75%,
-      rgba(0, 0, 0, 0.8) 80%, rgba(0, 0, 0, 0.8) 100%);
+      rgba(0, 0, 0, 0.1) 80%, rgba(0, 0, 0, 0.1) 100%);
 }
 
 .message-box {
