@@ -152,7 +152,10 @@ func (app *Application) initARContext() {
 			// マーカー作成
 			app.createMarkers()
 			fmt.Println("AR Initialized")
+			//go func() {
+			//time.Sleep(1 * time.Second)
 			app.onResize()
+			//}()
 			return nil
 		}))
 		return nil
@@ -195,12 +198,6 @@ func (app *Application) createMarkers() {
 		app.markers = append(app.markers, root)
 		fmt.Printf("marker %d: %s created\n", i, u)
 	}
-
-	// レンダリングループ開始
-	app.renderer.Call("setAnimationLoop", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		app.render()
-		return nil
-	}))
 }
 
 func (app *Application) projection(marker js.Value, width, height float64) Marker {
