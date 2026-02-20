@@ -14,7 +14,7 @@ body {
   background:
     radial-gradient(circle 55vh at center,
       transparent 0%, transparent 75%,
-      rgba(0, 0, 0, 0.1) 80%, rgba(0, 0, 0, 0.1) 100%);
+      rgba(0, 0, 0, 0.7) 80%, rgba(0, 0, 0, 0.7) 100%);
   user-select: none;
   transition: background-color 0.5s cubic-bezier(0, 0, 0.2, 1);
 }
@@ -22,6 +22,27 @@ body {
 .center-hole-mask.flash {
   transition: background-color 0s;
   background: rgb(255, 255, 255, 1.0);
+}
+
+.center-hole-mask::before,
+.center-hole-mask::after {
+  content: '';
+  position: absolute;
+  opacity: 0.5;
+  background: black;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.center-hole-mask::before {
+  width: 2px;
+  height: 88vh;
+}
+
+.center-hole-mask::after {
+  width: 88vh;
+  height: 2px;
 }
 
 .message-box {

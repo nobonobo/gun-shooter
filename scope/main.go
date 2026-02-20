@@ -277,6 +277,12 @@ func (app *Application) onResize() {
 }
 
 func main() {
+	if GetParam("name") == "" {
+		v := window.Call("prompt", "Enter your name")
+		if v.Type() == js.TypeString && v.String() != "" {
+			SetParam("name", v.String())
+		}
+	}
 	skip := GetParam("skip") != ""
 	fmt.Println("wasm instance started: skip =", skip)
 	defer fmt.Println("wasm instance ended")
