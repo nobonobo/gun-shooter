@@ -31,6 +31,7 @@ type Application struct {
 	ctx          context.Context
 	cancel       context.CancelFunc
 	cnt          int
+	fire         bool
 	OnUpdate     func([4]Marker)
 }
 
@@ -122,6 +123,18 @@ func (app *Application) Run() {
 	})
 	window.Call("addEventListener", "resize", resize)
 	window.Call("addEventListener", "orientationchange", resize)
+	app.fire = false
+	scope := document.Call("getElementById", "scope")
+	document.Get("body").Call("addEventListener", "click", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		println("click!")
+		args[0].Call("preventDefault")
+		scope.Get("classList").Call("add", "flash")
+		time.AfterFunc(20*time.Millisecond, func() {
+			scope.Get("classList").Call("remove", "flash")
+		})
+		app.fire = true
+		return nil
+	}))
 }
 
 func (app *Application) initARContext() {
@@ -308,11 +321,13 @@ func main() {
 					Name: app.name,
 					X:    x,
 					Y:    y,
+					Fire: app.fire,
 				}
 				b, _ := json.Marshal(info)
 				if err := app.Publish(b); err != nil {
 					console.Call("error", err.Error())
 				}
+				app.fire = false
 			}
 		}
 		app.Run()
