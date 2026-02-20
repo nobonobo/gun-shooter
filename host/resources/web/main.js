@@ -29,7 +29,7 @@ const showFinished = () => {
 console.log("Loading WebAssembly executable...");
 const go = new Go();
 const result = await WebAssembly.instantiateStreaming(
-  fetch("web/main.wasm"),
+  fetch("web/main.wasm?t=" + new Date().getTime()),
   go.importObject
 );
 hideLoading();

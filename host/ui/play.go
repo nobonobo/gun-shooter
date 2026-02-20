@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/mokiat/gog/opt"
@@ -55,6 +56,10 @@ type playScreenComponent struct {
 	sceneData *PlayData
 	scene     *game.Scene
 
+	textFont     *ui.Font
+	screenWidth  int
+	screenHeight int
+
 	globalState GlobalState
 }
 
@@ -69,6 +74,10 @@ func (c *playScreenComponent) OnCreate() {
 
 	componentData := co.GetData[PlayScreenData](c.Properties())
 	c.app = componentData.App
+
+	c.textFont = co.OpenFont(c.Scope(), "ui:///roboto-regular.ttf")
+	c.screenWidth = 1280
+	c.screenHeight = 840
 
 	c.createScene()
 	c.engine.SetActiveScene(c.scene)
@@ -160,6 +169,50 @@ func (c *playScreenComponent) Render() co.Instance {
 				})
 			}))
 		}
+
+		// Player Markers
+		for id, active := range c.globalState.Actives {
+			if time.Since(active.Time) > 5*time.Second {
+				continue
+			}
+			x := int(active.Info.X * float64(c.screenWidth))
+			y := int(active.Info.Y * float64(c.screenHeight))
+
+			co.WithChild("player-"+id, co.New(std.Element, func() {
+				co.WithLayoutData(layout.Data{
+					Left: opt.V(x),
+					Top:  opt.V(y),
+				})
+				co.WithData(std.ElementData{
+					Layout: layout.Vertical(layout.VerticalSettings{
+						ContentAlignment: layout.HorizontalAlignmentCenter,
+					}),
+				})
+
+				co.WithChild("dot", co.New(std.Container, func() {
+					color := ui.Green()
+					if active.Info.Fire {
+						color = ui.Red()
+					}
+					co.WithLayoutData(layout.Data{
+						Width:  opt.V(10),
+						Height: opt.V(10),
+					})
+					co.WithData(std.ContainerData{
+						BackgroundColor: opt.V(color),
+					})
+				}))
+
+				co.WithChild("label", co.New(std.Label, func() {
+					co.WithData(std.LabelData{
+						Font:      c.textFont,
+						FontSize:  opt.V(float32(16)),
+						FontColor: opt.V(ui.White()),
+						Text:      active.Info.Name,
+					})
+				}))
+			}))
+		}
 	})
 }
 
@@ -236,3 +289,21 @@ func (c *playScreenComponent) createCamera(scene *graphics.Scene) *graphics.Came
 
 // Temporary global storage for data across views
 var playSceneData *PlayData
+
+var cnt = 0
+
+func (c *playScreenComponent) OnUpdate(element *ui.Element) {
+	bounds := element.Bounds()
+	c.screenWidth = bounds.Width
+	c.screenHeight = bounds.Height
+	c.Invalidate()
+	cnt++
+	if cnt%100 == 0 {
+		for id, active := range c.globalState.Actives {
+			if time.Since(active.Time) > 5*time.Second {
+				continue
+			}
+			log.Println("active:", id, active.Info.Name, active.Info.X, active.Info.Y, active.Info.Fire)
+		}
+	}
+}

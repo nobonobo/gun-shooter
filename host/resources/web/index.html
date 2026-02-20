@@ -10,10 +10,15 @@
   <title>Game</title>
 
   <link rel="icon" type="image/png" sizes="32x32" href="web/favicon.png" />
-  <link rel="stylesheet" href="web/main.css" />
+  <link rel="stylesheet" href="web/main.css" data-timestamp="auto" />
 
   <script type="text/javascript" src="web/wasm_exec.js"></script>
-  <script type="module" src="web/main.js"></script>
+  <script type="module" src="web/main.js?t=11" data-timestamp="auto"></script>
+  <script type="module">
+    document.querySelectorAll('link[data-timestamp="auto"]').forEach(a => {
+      a.href += (a.href.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+    });
+  </script>
 </head>
 
 <body>

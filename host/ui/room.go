@@ -49,13 +49,17 @@ type roomScreenComponent struct {
 	cancel context.CancelFunc
 
 	globalState GlobalState
+	eventBus    *mvc.EventBus
+	cnt         int
 }
 
 func (c *roomScreenComponent) OnCreate() {
+	c.cnt++
+	log.Println("room screen created:", c.cnt)
 	c.globalState = co.TypedValue[GlobalState](c.Scope())
 	c.engine = c.globalState.Engine
 	c.resourceSet = c.globalState.ResourceSet
-
+	c.eventBus = co.TypedValue[*mvc.EventBus](c.Scope())
 	componentData := co.GetData[RoomScreenData](c.Properties())
 	c.app = componentData.App
 
@@ -98,16 +102,6 @@ func (c *roomScreenComponent) OnCreate() {
 			})
 		})
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	c.ctx = ctx
-	c.cancel = cancel
-	go func() {
-		log.Println("listen start:", c.host.ID())
-		defer log.Println("listen stop:", c.host.ID())
-		if err := c.host.Listen(ctx); err != nil {
-			log.Println("failed to listen", err)
-		}
-	}()
 	go func() {
 		ticker := time.NewTicker(time.Second)
 		defer ticker.Stop()
@@ -130,8 +124,7 @@ func (c *roomScreenComponent) UpdateMembers() {
 		}
 		members = append(members, active.Info.Name)
 	}
-	eventBus := co.TypedValue[*mvc.EventBus](c.Scope())
-	eventBus.Notify(RoomMembersUpdatedEvent{Members: members})
+	c.eventBus.Notify(RoomMembersUpdatedEvent{Members: members})
 }
 
 func (c *roomScreenComponent) OnDelete() {
