@@ -15,6 +15,7 @@ func BootstrapApplication(window *ui.Window, gameController *game.Controller) {
 	scope := co.RootScope(window)
 	scope = co.TypedValueScope(scope, eventBus)
 	scope = co.TypedValueScope(scope, GlobalState{
+		AudioAPI:    window.AudioAPI(),
 		Engine:      engine,
 		ResourceSet: engine.CreateResourceSet(),
 		Actives:     make(map[string]ActiveMember),

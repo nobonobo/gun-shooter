@@ -281,9 +281,10 @@ func (c *roomScreenComponent) OnEvent(event mvc.Event) {
 }
 
 func (c *roomScreenComponent) onPlayClicked() {
+	globalState := co.TypedValue[GlobalState](c.Scope())
 	promise := NewLoadingPromise(
 		co.Window(c.Scope()),
-		LoadPlayData(c.engine, c.resourceSet),
+		LoadPlayData(globalState.AudioAPI, c.engine, c.resourceSet),
 		func(d *PlayData) {
 			playSceneData = d
 		},

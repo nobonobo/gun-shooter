@@ -62,7 +62,7 @@ func NewApplication() *Application {
 	return app
 }
 
-func (app *Application) Publish(data []byte) error {
+func (app *Application) Publish(data []byte, force bool) error {
 	app.cnt++
 	if app.cnt%100 == 0 {
 		fmt.Println("publish:", string(data))
@@ -71,7 +71,7 @@ func (app *Application) Publish(data []byte) error {
 	if dc.ReadyState() != webrtc.DataChannelStateOpen {
 		return fmt.Errorf("data channel not open: %s", dc.ReadyState())
 	}
-	if dc.BufferedAmount() > 128 {
+	if dc.BufferedAmount() > 128 && !force {
 		return fmt.Errorf("buffer full")
 	}
 	return dc.Send(data)
@@ -333,7 +333,7 @@ func main() {
 					Fire: app.fire,
 				}
 				b, _ := json.Marshal(info)
-				if err := app.Publish(b); err != nil {
+				if err := app.Publish(b, info.Fire); err != nil {
 					return
 				}
 				app.fire = false

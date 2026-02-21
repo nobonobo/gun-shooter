@@ -30,6 +30,6 @@ func runApplication() error {
 	cfg.SetVSync(true)
 	cfg.SetIcon("ui/images/icon.png")
 	cfg.SetLocator(ui.WrappedLocator(resource.NewFSLocator(resources.UI)))
-	cfg.SetAudioEnabled(false)
+	cfg.SetAudioEnabled(true)
 	return nativeapp.Run(cfg, controller)
 }

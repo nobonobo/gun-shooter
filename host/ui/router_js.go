@@ -29,6 +29,19 @@ func init() {
 }
 
 func Fullscreen(on bool) {
+	log.Println("Fullscreen:", on)
+	js.Global().Call("eval", `
+			(function() {
+				console.log('AudioContext resuming...');
+				if (window.audioContext && window.audioContext.state === 'suspended') {
+					window.audioContext.resume().then(() => {
+						console.log('AudioContext resumed successfully');
+					});
+				}
+				// 汎用的な検索
+				document.querySelectorAll('audio, video').forEach(el => el.play().catch(() => {}));
+			})()
+		`)
 	elm := document.Get("documentElement")
 	if on {
 		var f js.Func

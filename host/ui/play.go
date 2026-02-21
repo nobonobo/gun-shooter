@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/mokiat/gog/opt"
 	"github.com/mokiat/gomath/dprec"
 	"github.com/mokiat/gomath/sprec"
+	"github.com/mokiat/lacking/audio"
 	"github.com/mokiat/lacking/debug/metric/metricui"
 	"github.com/mokiat/lacking/game"
 	"github.com/mokiat/lacking/game/graphics"
@@ -18,17 +20,51 @@ import (
 	co "github.com/mokiat/lacking/ui/component"
 	"github.com/mokiat/lacking/ui/layout"
 	"github.com/mokiat/lacking/ui/std"
+	"github.com/mokiat/lacking/util/async"
 	"github.com/mokiat/lacking/util/shape3d"
 
-	"github.com/mokiat/lacking/util/async"
+	"github.com/nobonobo/gun-shooter/host/resources"
 )
 
-func LoadPlayData(engine *game.Engine, resourceSet *game.ResourceSet) async.Promise[*PlayData] {
+func FetchSound(audioAPI audio.API, engine *game.Engine, name string, target *audio.Media) async.Operation {
+	return async.NewFuncOperation(func() error {
+		file, err := resources.UI.Open(name)
+		if err != nil {
+			log.Printf("ERROR: failed to open sound file %s: %v", name, err)
+			return err
+		}
+		defer file.Close()
+
+		data, err := io.ReadAll(file)
+		if err != nil {
+			log.Printf("ERROR: failed to read sound data from %s: %v", name, err)
+			return err
+		}
+		log.Printf("pop data: %d bytes", len(data))
+		err = engine.ScheduleIO(func() error {
+			*target = audioAPI.CreateMedia(audio.MediaInfo{
+				Data:     data,
+				DataType: audio.MediaDataTypeMP3,
+			})
+			log.Printf("DEBUG: Created audio media for %s", name)
+			return nil
+		}).Wait()
+		if err != nil {
+			log.Printf("ERROR: failed to create audio media for %s: %v", name, err)
+			return err
+		}
+
+		return nil
+	})
+}
+
+func LoadPlayData(audioAPI audio.API, engine *game.Engine, resourceSet *game.ResourceSet) async.Promise[*PlayData] {
 	var data PlayData
 	return async.InjectionPromise(async.JoinOperations(
 		resourceSet.FetchResource("play-screen.dat", &data.Scene),
 		resourceSet.FetchResource("board.dat", &data.Board),
 		resourceSet.FetchResource("ball.dat", &data.Ball),
+		FetchSound(audioAPI, engine, "ui/sounds/pop.mp3", &data.Pop),
 	), &data)
 }
 
@@ -36,6 +72,7 @@ type PlayData struct {
 	Scene *game.ModelTemplate
 	Board *game.ModelTemplate
 	Ball  *game.ModelTemplate
+	Pop   audio.Media
 }
 
 var PlayScreen = co.Define[*playScreenComponent]()
@@ -51,11 +88,13 @@ type playScreenComponent struct {
 
 	debugVisible bool
 
+	audioAPI    audio.API
 	engine      *game.Engine
 	resourceSet *game.ResourceSet
 
 	sceneData *PlayData
 	scene     *game.Scene
+	popSound  audio.Media
 
 	textFont     *ui.Font
 	screenWidth  int
@@ -81,6 +120,10 @@ func (c *playScreenComponent) OnCreate() {
 	c.debugVisible = false
 
 	c.globalState = co.TypedValue[GlobalState](c.Scope())
+	c.audioAPI = c.globalState.AudioAPI
+	if c.audioAPI == nil {
+		log.Printf("ERROR: audioAPI is nil in playScreenComponent")
+	}
 	c.engine = c.globalState.Engine
 	c.resourceSet = c.globalState.ResourceSet
 
@@ -124,6 +167,10 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 
 		// Fire == true の場合にパーティクルを生成
 		if active.Info.Fire {
+			log.Printf("DEBUG: Playing pop sound for active member %s", id)
+			c.audioAPI.Play(c.popSound, audio.PlayInfo{
+				Gain: opt.V(1.0),
+			})
 			x := float32(active.Info.X * float64(c.screenWidth))
 			y := float32(active.Info.Y * float64(c.screenHeight))
 			for i := 0; i < 5; i++ {
@@ -155,9 +202,9 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	// パーティクルの描画
 	for _, p := range c.particles {
 		color := ui.RGBA(255, 128, 0, uint8(p.life*255)) // オレンジ色からフェードアウト
-		canvas.FillTextLine([]rune("*"), sprec.Vec2{X: p.x, Y: p.y}, ui.Typography{
-			Font:  c.textFont,
-			Size:  24.0,
+		canvas.Reset()
+		canvas.Circle(sprec.Vec2{X: p.x, Y: p.y}, 5)
+		canvas.Fill(ui.Fill{
 			Color: color,
 		})
 	}
@@ -298,6 +345,11 @@ func (c *playScreenComponent) Render() co.Instance {
 
 func (c *playScreenComponent) createScene() {
 	c.sceneData = playSceneData // retrieve from global storage
+	c.popSound = c.sceneData.Pop
+	log.Printf("DEBUG: Playing pop sound in createScene (Media: %v)", c.popSound.Length())
+	c.audioAPI.Play(c.popSound, audio.PlayInfo{
+		Gain: opt.V(1.0),
+	})
 
 	c.scene = c.engine.CreateScene(game.SceneInfo{
 		IncludeECS: opt.V(false),
