@@ -273,7 +273,7 @@ func (c *playScreenComponent) OnKeyboardEvent(element *ui.Element, event ui.Keyb
 	switch event.Code {
 
 	case ui.KeyCodeEscape:
-		co.Window(c.Scope()).Close()
+		c.app.SetActiveView(ViewNameRoom)
 		return true
 
 	case ui.KeyCodeTab:
@@ -561,7 +561,7 @@ func (c *playScreenComponent) Render() co.Instance {
 							})
 							co.WithCallbackData(std.ButtonCallbackData{
 								OnClick: func() {
-									co.Window(c.Scope()).Close()
+									c.app.SetActiveView(ViewNameRoom)
 								},
 							})
 						}))
