@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/mokiat/gog/opt"
@@ -62,7 +63,16 @@ type playScreenComponent struct {
 
 	cnt int
 
+	particles      []particle
+	lastUpdateTime time.Time
+
 	globalState GlobalState
+}
+
+type particle struct {
+	x, y   float32
+	vx, vy float32
+	life   float32 // 1.0 down to 0.0
 }
 
 var _ ui.ElementKeyboardHandler = (*playScreenComponent)(nil)
@@ -80,6 +90,7 @@ func (c *playScreenComponent) OnCreate() {
 	c.textFont = co.OpenFont(c.Scope(), "ui:///roboto-regular.ttf")
 	c.screenWidth = 1280
 	c.screenHeight = 840
+	c.lastUpdateTime = time.Now()
 
 	c.createScene()
 	c.engine.SetActiveScene(c.scene)
@@ -95,15 +106,62 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	c.screenWidth = element.Bounds().Width
 	c.screenHeight = element.Bounds().Height
 
+	now := time.Now()
+	dt := float32(now.Sub(c.lastUpdateTime).Seconds())
+	c.lastUpdateTime = now
+
+	// 100フレームごとのデバッグログ
 	c.cnt++
-	if c.cnt%100 == 0 {
-		for id, active := range c.globalState.Actives {
-			if time.Since(active.Time) > 5*time.Second {
-				continue
-			}
+	logDebug := c.cnt%100 == 0
+
+	for id, active := range c.globalState.Actives {
+		if time.Since(active.Time) > 5*time.Second {
+			continue
+		}
+		if logDebug {
 			log.Println("active:", id, active.Info.Name, active.Info.X, active.Info.Y, active.Info.Fire)
 		}
+
+		// Fire == true の場合にパーティクルを生成
+		if active.Info.Fire {
+			x := float32(active.Info.X * float64(c.screenWidth))
+			y := float32(active.Info.Y * float64(c.screenHeight))
+			for i := 0; i < 5; i++ {
+				c.particles = append(c.particles, particle{
+					x:    x,
+					y:    y,
+					vx:   (rand.Float32() - 0.5) * 500,
+					vy:   (rand.Float32() - 0.5) * 500,
+					life: 1.0,
+				})
+			}
+		}
 	}
+
+	// パーティクルの更新
+	for i := 0; i < len(c.particles); {
+		p := &c.particles[i]
+		p.x += p.vx * dt
+		p.y += p.vy * dt
+		p.life -= dt * 3.0 // 約0.33秒で消える
+		if p.life <= 0 {
+			c.particles[i] = c.particles[len(c.particles)-1]
+			c.particles = c.particles[:len(c.particles)-1]
+		} else {
+			i++
+		}
+	}
+
+	// パーティクルの描画
+	for _, p := range c.particles {
+		color := ui.RGBA(255, 128, 0, uint8(p.life*255)) // オレンジ色からフェードアウト
+		canvas.FillTextLine([]rune("*"), sprec.Vec2{X: p.x, Y: p.y}, ui.Typography{
+			Font:  c.textFont,
+			Size:  24.0,
+			Color: color,
+		})
+	}
+
 	c.Invalidate()
 }
 
@@ -202,8 +260,8 @@ func (c *playScreenComponent) Render() co.Instance {
 
 			co.WithChild("player-"+id, co.New(std.Element, func() {
 				co.WithLayoutData(layout.Data{
-					Left: opt.V(x),
-					Top:  opt.V(y),
+					HorizontalCenter: opt.V(x - c.screenWidth/2),
+					Top:              opt.V(y - 5),
 				})
 				co.WithData(std.ElementData{
 					Layout: layout.Vertical(layout.VerticalSettings{
