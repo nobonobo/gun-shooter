@@ -167,12 +167,15 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 
 		// Fire == true の場合にパーティクルを生成
 		if active.Info.Fire {
-			log.Printf("DEBUG: Playing pop sound for active member %s", id)
+			active.Info.Fire = false
+			x := float32(active.Info.X * float64(c.screenWidth))
+			y := float32(active.Info.Y * float64(c.screenHeight))
+			if x < 0 || y < 0 || x > float32(c.screenWidth) || y > float32(c.screenHeight) {
+				continue
+			}
 			c.audioAPI.Play(c.popSound, audio.PlayInfo{
 				Gain: opt.V(1.0),
 			})
-			x := float32(active.Info.X * float64(c.screenWidth))
-			y := float32(active.Info.Y * float64(c.screenHeight))
 			for i := 0; i < 5; i++ {
 				c.particles = append(c.particles, particle{
 					x:    x,
@@ -346,7 +349,6 @@ func (c *playScreenComponent) Render() co.Instance {
 func (c *playScreenComponent) createScene() {
 	c.sceneData = playSceneData // retrieve from global storage
 	c.popSound = c.sceneData.Pop
-	log.Printf("DEBUG: Playing pop sound in createScene (Media: %v)", c.popSound.Length())
 	c.audioAPI.Play(c.popSound, audio.PlayInfo{
 		Gain: opt.V(1.0),
 	})

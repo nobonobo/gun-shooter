@@ -96,6 +96,10 @@ func (c *roomScreenComponent) OnCreate() {
 						log.Println("data channel message:", id, info)
 					}
 				*/
+				old, ok := c.globalState.Actives[id]
+				if ok {
+					info.Fire = info.Fire || old.Info.Fire
+				}
 				c.globalState.Actives[id] = ActiveMember{
 					Time: time.Now(),
 					Info: info,
