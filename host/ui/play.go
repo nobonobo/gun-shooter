@@ -81,6 +81,15 @@ type PlayScreenData struct {
 	App *applicationComponent
 }
 
+type PlayMode int
+
+const (
+	PlayModeCalibration PlayMode = iota
+	PlayModeCountdown
+	PlayModePlaying
+	PlayModeGameOver
+)
+
 type playScreenComponent struct {
 	co.BaseComponent
 
@@ -106,6 +115,11 @@ type playScreenComponent struct {
 	lastUpdateTime time.Time
 
 	globalState GlobalState
+
+	// Game State
+	mode     PlayMode
+	modeTime time.Duration
+	scores   map[string]int
 }
 
 type particle struct {
@@ -139,6 +153,9 @@ func (c *playScreenComponent) OnCreate() {
 	c.engine.SetActiveScene(c.scene)
 	c.engine.ResetDeltaTime()
 
+	c.mode = PlayModeCalibration
+	c.scores = make(map[string]int)
+
 	Fullscreen(true)
 }
 
@@ -157,6 +174,22 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	c.cnt++
 	logDebug := c.cnt%100 == 0
 
+	// タイマー更新
+	if c.modeTime > 0 {
+		c.modeTime -= time.Duration(dt * float32(time.Second))
+		if c.modeTime <= 0 {
+			c.modeTime = 0
+			// モード遷移
+			switch c.mode {
+			case PlayModeCountdown:
+				c.mode = PlayModePlaying
+				c.modeTime = 60 * time.Second // ゲーム時間は60秒
+			case PlayModePlaying:
+				c.mode = PlayModeGameOver
+			}
+		}
+	}
+
 	for id, active := range c.globalState.Actives {
 		if time.Since(active.Time) > 5*time.Second {
 			continue
@@ -173,6 +206,12 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 			if x < 0 || y < 0 || x > float32(c.screenWidth) || y > float32(c.screenHeight) {
 				continue
 			}
+
+			// プレイ中のみスコア加算
+			if c.mode == PlayModePlaying {
+				c.scores[id]++
+			}
+
 			c.audioAPI.Play(c.popSound, audio.PlayInfo{
 				Gain: opt.V(1.0),
 			})
@@ -212,7 +251,17 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 		})
 	}
 
-	c.Invalidate()
+	invalid := true
+	if c.mode == PlayModeCalibration {
+		invalid = false // キャリブレーション中は描画更新不要（パーティクルがなければ）
+	}
+	if len(c.particles) > 0 || c.modeTime > 0 || c.mode == PlayModePlaying {
+		invalid = true
+	}
+
+	if invalid {
+		c.Invalidate()
+	}
 }
 
 func (c *playScreenComponent) OnDelete() {
@@ -300,49 +349,226 @@ func (c *playScreenComponent) Render() co.Instance {
 			}))
 		}
 
-		// Player Markers
-		for id, active := range c.globalState.Actives {
-			if time.Since(active.Time) > 5*time.Second {
-				continue
-			}
-			x := int(active.Info.X * float64(c.screenWidth))
-			y := int(active.Info.Y * float64(c.screenHeight))
+		// Player Markers (Only visible during Calibration, Countdown, and Playing)
+		if c.mode != PlayModeGameOver {
+			for id, active := range c.globalState.Actives {
+				if time.Since(active.Time) > 5*time.Second {
+					continue
+				}
+				x := int(active.Info.X * float64(c.screenWidth))
+				y := int(active.Info.Y * float64(c.screenHeight))
 
-			co.WithChild("player-"+id, co.New(std.Element, func() {
-				co.WithLayoutData(layout.Data{
-					HorizontalCenter: opt.V(x - c.screenWidth/2),
-					Top:              opt.V(y - 5),
-				})
-				co.WithData(std.ElementData{
-					Layout: layout.Vertical(layout.VerticalSettings{
-						ContentAlignment: layout.HorizontalAlignmentCenter,
-					}),
-				})
-
-				co.WithChild("dot", co.New(std.Container, func() {
-					color := ui.Green()
-					if active.Info.Fire {
-						color = ui.Red()
-					}
+				co.WithChild("player-"+id, co.New(std.Element, func() {
 					co.WithLayoutData(layout.Data{
-						Width:  opt.V(10),
-						Height: opt.V(10),
+						HorizontalCenter: opt.V(x - c.screenWidth/2),
+						Top:              opt.V(y - 5),
+					})
+					co.WithData(std.ElementData{
+						Layout: layout.Vertical(layout.VerticalSettings{
+							ContentAlignment: layout.HorizontalAlignmentCenter,
+						}),
+					})
+
+					co.WithChild("dot", co.New(std.Container, func() {
+						color := ui.Green()
+						if active.Info.Fire {
+							color = ui.Red()
+						}
+						co.WithLayoutData(layout.Data{
+							Width:  opt.V(10),
+							Height: opt.V(10),
+						})
+						co.WithData(std.ContainerData{
+							BackgroundColor: opt.V(color),
+						})
+					}))
+
+					co.WithChild("label", co.New(std.Label, func() {
+						co.WithData(std.LabelData{
+							Font:      c.textFont,
+							FontSize:  opt.V(float32(16)),
+							FontColor: opt.V(ui.White()),
+							Text:      active.Info.Name,
+						})
+					}))
+				}))
+			}
+		}
+
+		// Mode Overlays
+		co.WithChild("overlay", co.New(std.Element, func() {
+			co.WithLayoutData(layout.Data{
+				Top:    opt.V(0),
+				Left:   opt.V(0),
+				Right:  opt.V(0),
+				Bottom: opt.V(0),
+			})
+			co.WithData(std.ElementData{
+				Layout: layout.Anchor(),
+			})
+
+			switch c.mode {
+			case PlayModeCalibration:
+				co.WithChild("calibration-box", co.New(std.Container, func() {
+					co.WithLayoutData(layout.Data{
+						HorizontalCenter: opt.V(0),
+						VerticalCenter:   opt.V(0),
 					})
 					co.WithData(std.ContainerData{
-						BackgroundColor: opt.V(color),
+						BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 180)),
+						Padding:         ui.Spacing{Left: 40, Right: 40, Top: 20, Bottom: 20},
+						Layout: layout.Vertical(layout.VerticalSettings{
+							ContentAlignment: layout.HorizontalAlignmentCenter,
+							ContentSpacing:   20,
+						}),
+					})
+
+					co.WithChild("text", co.New(std.Label, func() {
+						co.WithData(std.LabelData{
+							Font:      c.textFont,
+							FontSize:  opt.V(float32(32)),
+							FontColor: opt.V(ui.White()),
+							Text:      "Waiting for Calibration...",
+						})
+					}))
+
+					co.WithChild("start-btn", co.New(std.Button, func() {
+						co.WithData(std.ButtonData{
+							Text: "START GAME",
+						})
+						co.WithCallbackData(std.ButtonCallbackData{
+							OnClick: func() {
+								c.mode = PlayModeCountdown
+								c.modeTime = 3 * time.Second
+								c.scores = make(map[string]int)
+								c.Invalidate()
+							},
+						})
+					}))
+				}))
+
+			case PlayModeCountdown:
+				co.WithChild("countdown-text", co.New(std.Label, func() {
+					co.WithLayoutData(layout.Data{
+						HorizontalCenter: opt.V(0),
+						VerticalCenter:   opt.V(0),
+					})
+					seconds := int(c.modeTime.Seconds()) + 1
+					co.WithData(std.LabelData{
+						Font:      c.textFont,
+						FontSize:  opt.V(float32(128)),
+						FontColor: opt.V(ui.Yellow()),
+						Text:      fmt.Sprintf("%d", seconds),
 					})
 				}))
 
-				co.WithChild("label", co.New(std.Label, func() {
-					co.WithData(std.LabelData{
-						Font:      c.textFont,
-						FontSize:  opt.V(float32(16)),
-						FontColor: opt.V(ui.White()),
-						Text:      active.Info.Name,
+			case PlayModePlaying:
+				// HUD
+				co.WithChild("hud", co.New(std.Container, func() {
+					co.WithLayoutData(layout.Data{
+						Top:              opt.V(20),
+						HorizontalCenter: opt.V(0),
 					})
+					co.WithData(std.ContainerData{
+						BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 120)),
+						Padding:         ui.Spacing{Left: 20, Right: 20, Top: 10, Bottom: 10},
+						Layout: layout.Horizontal(layout.HorizontalSettings{
+							ContentAlignment: layout.VerticalAlignmentCenter,
+							ContentSpacing:   40,
+						}),
+					})
+
+					co.WithChild("timer", co.New(std.Label, func() {
+						co.WithData(std.LabelData{
+							Font:      c.textFont,
+							FontSize:  opt.V(float32(32)),
+							FontColor: opt.V(ui.White()),
+							Text:      fmt.Sprintf("TIME: %d", int(c.modeTime.Seconds())),
+						})
+					}))
 				}))
-			}))
-		}
+
+			case PlayModeGameOver:
+				co.WithChild("gameover-box", co.New(std.Container, func() {
+					co.WithLayoutData(layout.Data{
+						HorizontalCenter: opt.V(0),
+						VerticalCenter:   opt.V(0),
+					})
+					co.WithData(std.ContainerData{
+						BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 220)),
+						Padding:         ui.Spacing{Left: 60, Right: 60, Top: 40, Bottom: 40},
+						Layout: layout.Vertical(layout.VerticalSettings{
+							ContentAlignment: layout.HorizontalAlignmentCenter,
+							ContentSpacing:   20,
+						}),
+					})
+
+					co.WithChild("title", co.New(std.Label, func() {
+						co.WithData(std.LabelData{
+							Font:      c.textFont,
+							FontSize:  opt.V(float32(48)),
+							FontColor: opt.V(ui.Red()),
+							Text:      "GAME OVER",
+						})
+					}))
+
+					// Score List
+					co.WithChild("scores", co.New(std.Element, func() {
+						co.WithData(std.ElementData{
+							Layout: layout.Vertical(layout.VerticalSettings{
+								ContentAlignment: layout.HorizontalAlignmentCenter,
+								ContentSpacing:   5,
+							}),
+						})
+						for id, score := range c.scores {
+							name := "Unknown"
+							if active, ok := c.globalState.Actives[id]; ok {
+								name = active.Info.Name
+							}
+							co.WithChild("score-"+id, co.New(std.Label, func() {
+								co.WithData(std.LabelData{
+									Font:      c.textFont,
+									FontSize:  opt.V(float32(24)),
+									FontColor: opt.V(ui.White()),
+									Text:      fmt.Sprintf("%s: %d", name, score),
+								})
+							}))
+						}
+					}))
+
+					co.WithChild("actions", co.New(std.Element, func() {
+						co.WithData(std.ElementData{
+							Layout: layout.Horizontal(layout.HorizontalSettings{
+								ContentSpacing: 20,
+							}),
+						})
+						co.WithChild("restart-btn", co.New(std.Button, func() {
+							co.WithData(std.ButtonData{
+								Text: "RESTART",
+							})
+							co.WithCallbackData(std.ButtonCallbackData{
+								OnClick: func() {
+									c.mode = PlayModeCountdown
+									c.modeTime = 3 * time.Second
+									c.scores = make(map[string]int)
+									c.Invalidate()
+								},
+							})
+						}))
+						co.WithChild("exit-btn", co.New(std.Button, func() {
+							co.WithData(std.ButtonData{
+								Text: "EXIT",
+							})
+							co.WithCallbackData(std.ButtonCallbackData{
+								OnClick: func() {
+									co.Window(c.Scope()).Close()
+								},
+							})
+						}))
+					}))
+				}))
+			}
+		}))
 	})
 }
 
