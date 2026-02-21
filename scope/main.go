@@ -310,12 +310,6 @@ func main() {
 			w, h := window.Get("innerWidth").Float(), window.Get("innerHeight").Float()
 			points := compensateMarkers(markers)
 			x, y := calc(points, w, h)
-			println(x, y, "\n",
-				points[0].X, points[0].Y, "\n",
-				points[1].X, points[1].Y, "\n",
-				points[2].X, points[2].Y, "\n",
-				points[3].X, points[3].Y,
-			)
 			if math.IsNaN(x) {
 				x = 0.5
 			}
