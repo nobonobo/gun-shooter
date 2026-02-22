@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"maps"
 	"math/rand"
+	"slices"
 	"time"
 
 	"github.com/mokiat/gog/opt"
@@ -119,7 +121,6 @@ type playScreenComponent struct {
 	// Game State
 	mode     PlayMode
 	modeTime time.Duration
-	scores   map[string]int
 }
 
 type particle struct {
@@ -154,7 +155,7 @@ func (c *playScreenComponent) OnCreate() {
 	c.engine.ResetDeltaTime()
 
 	c.mode = PlayModeCalibration
-	c.scores = make(map[string]int)
+	c.ResetScores()
 
 	Fullscreen(true)
 }
@@ -209,7 +210,9 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 
 			// プレイ中のみスコア加算
 			if c.mode == PlayModePlaying {
-				c.scores[id]++
+				m := c.globalState.Actives[id]
+				m.Score++
+				c.globalState.Actives[id] = m
 			}
 
 			c.audioAPI.Play(c.popSound, audio.PlayInfo{
@@ -351,7 +354,8 @@ func (c *playScreenComponent) Render() co.Instance {
 
 		// Player Markers (Only visible during Calibration, Countdown, and Playing)
 		if c.mode != PlayModeGameOver {
-			for id, active := range c.globalState.Actives {
+			for _, id := range slices.Sorted(maps.Keys(c.globalState.Actives)) {
+				active := c.globalState.Actives[id]
 				if time.Since(active.Time) > 5*time.Second {
 					continue
 				}
@@ -440,7 +444,7 @@ func (c *playScreenComponent) Render() co.Instance {
 							OnClick: func() {
 								c.mode = PlayModeCountdown
 								c.modeTime = 3 * time.Second
-								c.scores = make(map[string]int)
+								c.ResetScores()
 								c.Invalidate()
 							},
 						})
@@ -506,13 +510,12 @@ func (c *playScreenComponent) Render() co.Instance {
 						if time.Since(active.Time) > 5*time.Second {
 							continue
 						}
-						score := c.scores[id]
 						co.WithChild("score-"+id, co.New(std.Label, func() {
 							co.WithData(std.LabelData{
 								Font:      c.textFont,
 								FontSize:  opt.V(float32(20)),
 								FontColor: opt.V(ui.White()),
-								Text:      fmt.Sprintf("%s: %d", active.Info.Name, score),
+								Text:      fmt.Sprintf("%s: %d", active.Info.Name, active.Score),
 							})
 						}))
 					}
@@ -550,17 +553,14 @@ func (c *playScreenComponent) Render() co.Instance {
 								ContentSpacing:   5,
 							}),
 						})
-						for id, score := range c.scores {
-							name := "Unknown"
-							if active, ok := c.globalState.Actives[id]; ok {
-								name = active.Info.Name
-							}
+						for _, id := range slices.Sorted(maps.Keys(c.globalState.Actives)) {
+							active := c.globalState.Actives[id]
 							co.WithChild("score-"+id, co.New(std.Label, func() {
 								co.WithData(std.LabelData{
 									Font:      c.textFont,
 									FontSize:  opt.V(float32(24)),
 									FontColor: opt.V(ui.White()),
-									Text:      fmt.Sprintf("%s: %d", name, score),
+									Text:      fmt.Sprintf("%s: %d", active.Info.Name, active.Score),
 								})
 							}))
 						}
@@ -580,7 +580,7 @@ func (c *playScreenComponent) Render() co.Instance {
 								OnClick: func() {
 									c.mode = PlayModeCountdown
 									c.modeTime = 3 * time.Second
-									c.scores = make(map[string]int)
+									c.ResetScores()
 									c.Invalidate()
 								},
 							})
@@ -675,6 +675,13 @@ func (c *playScreenComponent) createCamera(scene *graphics.Scene) *graphics.Came
 	result.SetAutoExposureSpeed(0.1)
 	result.SetCascadeDistances([]float32{32.0})
 	return result
+}
+
+func (c *playScreenComponent) ResetScores() {
+	for id, active := range c.globalState.Actives {
+		active.Score = 0
+		c.globalState.Actives[id] = active
+	}
 }
 
 // Temporary global storage for data across views

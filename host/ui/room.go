@@ -100,9 +100,17 @@ func (c *roomScreenComponent) OnCreate() {
 				if ok {
 					info.Fire = info.Fire || old.Info.Fire
 				}
-				c.globalState.Actives[id] = ActiveMember{
-					Time: time.Now(),
-					Info: info,
+				active, ok := c.globalState.Actives[id]
+				if ok {
+					active.Info = info
+					active.Time = time.Now()
+					c.globalState.Actives[id] = active
+				} else {
+					c.globalState.Actives[id] = ActiveMember{
+						Time:  time.Now(),
+						Info:  info,
+						Score: 0,
+					}
 				}
 				c.UpdateMembers()
 			})
