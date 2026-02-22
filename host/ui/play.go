@@ -29,6 +29,8 @@ import (
 	"github.com/nobonobo/gun-shooter/schema"
 )
 
+const MarkerSize = 200
+
 func FetchSound(audioAPI audio.API, engine *game.Engine, name string, target *audio.Media) async.Operation {
 	return async.NewFuncOperation(func() error {
 		file, err := resources.UI.Open(name)
@@ -157,7 +159,8 @@ func (c *playScreenComponent) OnCreate() {
 	c.mode = PlayModeCalibration
 	c.ResetAll()
 
-	Fullscreen(true)
+	//Fullscreen(true)
+	log.Println("OnCreate")
 }
 
 var _ ui.ElementRenderHandler = (*playScreenComponent)(nil)
@@ -225,10 +228,10 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 				c.Invalidate()
 				continue
 			}
-
-			x := float32(active.Info.X * float64(c.screenWidth))
-			y := float32(active.Info.Y * float64(c.screenHeight))
-			if x < 0 || y < 0 || x > float32(c.screenWidth) || y > float32(c.screenHeight) {
+			pos := active.Calibrate()
+			x := pos.X*float64(c.screenWidth-MarkerSize) + MarkerSize/2
+			y := pos.Y*float64(c.screenHeight-MarkerSize) + MarkerSize/2
+			if x < 0 || y < 0 || x > float64(c.screenWidth) || y > float64(c.screenHeight) {
 				continue
 			}
 
@@ -244,8 +247,8 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 			})
 			for i := 0; i < 5; i++ {
 				c.particles = append(c.particles, particle{
-					x:    x,
-					y:    y,
+					x:    float32(x),
+					y:    float32(y),
 					vx:   (rand.Float32() - 0.5) * 500,
 					vy:   (rand.Float32() - 0.5) * 500,
 					life: 1.0,
@@ -292,6 +295,7 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 }
 
 func (c *playScreenComponent) OnDelete() {
+	log.Println("OnDelete")
 	c.engine.SetActiveScene(nil)
 	Fullscreen(false)
 }
@@ -363,8 +367,8 @@ func (c *playScreenComponent) Render() co.Instance {
 					Right:  opt.V(0),
 				}
 			}
-			layoutData.Width = opt.V(200)
-			layoutData.Height = opt.V(200)
+			layoutData.Width = opt.V(MarkerSize)
+			layoutData.Height = opt.V(MarkerSize)
 
 			co.WithChild(fmt.Sprintf("marker-%d", i), co.New(std.Picture, func() {
 				co.WithLayoutData(layoutData)
@@ -383,13 +387,13 @@ func (c *playScreenComponent) Render() co.Instance {
 				if time.Since(active.Time) > 5*time.Second {
 					continue
 				}
-				x := int(active.Info.X * float64(c.screenWidth))
-				y := int(active.Info.Y * float64(c.screenHeight))
-
+				pos := active.Calibrate()
+				x := int(pos.X*float64(c.screenWidth-MarkerSize) + MarkerSize/2)
+				y := int(pos.Y*float64(c.screenHeight-MarkerSize) + MarkerSize/2)
 				co.WithChild("player-"+id, co.New(std.Element, func() {
 					co.WithLayoutData(layout.Data{
-						HorizontalCenter: opt.V(x - c.screenWidth/2),
-						Top:              opt.V(y - 5),
+						HorizontalCenter: opt.V(int(x) - c.screenWidth/2),
+						Top:              opt.V(int(y) - 5),
 					})
 					co.WithData(std.ElementData{
 						Layout: layout.Vertical(layout.VerticalSettings{
@@ -440,8 +444,8 @@ func (c *playScreenComponent) Render() co.Instance {
 				// Show target crosshair
 				var targetX, targetY int
 				var targetText string
-				centerX := c.screenWidth / 2
-				centerY := c.screenHeight / 2
+				centerX := (c.screenWidth - MarkerSize) / 2
+				centerY := (c.screenHeight - MarkerSize) / 2
 				switch c.calibIndex {
 				case 0:
 					targetX, targetY = -centerX/2, -centerY/2
@@ -468,6 +472,19 @@ func (c *playScreenComponent) Render() co.Instance {
 						Layout: layout.Anchor(),
 					})
 
+					co.WithChild("circle", co.New(std.Container, func() {
+						co.WithLayoutData(layout.Data{
+							HorizontalCenter: opt.V(0),
+							VerticalCenter:   opt.V(0),
+							Width:            opt.V(40),
+							Height:           opt.V(40),
+						})
+						co.WithData(std.ContainerData{
+							BackgroundColor: opt.V(ui.Blue()),
+							BorderColor:     opt.V(ui.Red()),
+							BorderSize:      ui.Spacing{Top: 2, Bottom: 2, Left: 2, Right: 2},
+						})
+					}))
 					// Crosshair lines
 					co.WithChild("h-line", co.New(std.Container, func() {
 						co.WithLayoutData(layout.Data{
@@ -477,7 +494,7 @@ func (c *playScreenComponent) Render() co.Instance {
 							Height:           opt.V(2),
 						})
 						co.WithData(std.ContainerData{
-							BackgroundColor: opt.V(ui.Green()),
+							BackgroundColor: opt.V(ui.White()),
 						})
 					}))
 					co.WithChild("v-line", co.New(std.Container, func() {
@@ -489,18 +506,6 @@ func (c *playScreenComponent) Render() co.Instance {
 						})
 						co.WithData(std.ContainerData{
 							BackgroundColor: opt.V(ui.White()),
-						})
-					}))
-					co.WithChild("circle", co.New(std.Container, func() {
-						co.WithLayoutData(layout.Data{
-							HorizontalCenter: opt.V(0),
-							VerticalCenter:   opt.V(0),
-							Width:            opt.V(40),
-							Height:           opt.V(40),
-						})
-						co.WithData(std.ContainerData{
-							BorderColor: opt.V(ui.White()),
-							BorderSize:  ui.Spacing{Top: 2, Bottom: 2, Left: 2, Right: 2},
 						})
 					}))
 				}))
