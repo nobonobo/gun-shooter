@@ -26,6 +26,7 @@ import (
 	"github.com/mokiat/lacking/util/shape3d"
 
 	"github.com/nobonobo/gun-shooter/host/resources"
+	"github.com/nobonobo/gun-shooter/schema"
 )
 
 func FetchSound(audioAPI audio.API, engine *game.Engine, name string, target *audio.Media) async.Operation {
@@ -111,16 +112,15 @@ type playScreenComponent struct {
 	screenWidth  int
 	screenHeight int
 
-	cnt int
-
 	particles      []particle
 	lastUpdateTime time.Time
 
 	globalState GlobalState
 
 	// Game State
-	mode     PlayMode
-	modeTime time.Duration
+	mode       PlayMode
+	modeTime   time.Duration
+	calibIndex int
 }
 
 type particle struct {
@@ -155,7 +155,7 @@ func (c *playScreenComponent) OnCreate() {
 	c.engine.ResetDeltaTime()
 
 	c.mode = PlayModeCalibration
-	c.ResetScores()
+	c.ResetAll()
 
 	Fullscreen(true)
 }
@@ -170,10 +170,6 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	now := time.Now()
 	dt := float32(now.Sub(c.lastUpdateTime).Seconds())
 	c.lastUpdateTime = now
-
-	// 100フレームごとのデバッグログ
-	c.cnt++
-	logDebug := c.cnt%100 == 0
 
 	// タイマー更新
 	if c.modeTime > 0 {
@@ -195,13 +191,41 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 		if time.Since(active.Time) > 5*time.Second {
 			continue
 		}
-		if logDebug {
-			log.Println("active:", id, active.Info.Name, active.Info.X, active.Info.Y, active.Info.Fire)
-		}
-
 		// Fire == true の場合にパーティクルを生成
 		if active.Info.Fire {
 			active.Info.Fire = false
+
+			// Calibration mode logic
+			if c.mode == PlayModeCalibration {
+				m := c.globalState.Actives[id]
+				m.Calibration[m.Calibrated] = schema.Point{
+					X: active.Info.X,
+					Y: active.Info.Y,
+				}
+				m.Calibrated++
+				c.globalState.Actives[id] = m
+				allCalibrated := true
+				for _, active := range c.globalState.Actives {
+					if active.Calibrated <= c.calibIndex {
+						allCalibrated = false
+						break
+					}
+				}
+				if allCalibrated {
+					c.calibIndex++
+					if c.calibIndex > 3 {
+						c.mode = PlayModeCountdown
+						c.modeTime = 3 * time.Second
+						c.ResetScores()
+					}
+				}
+				c.audioAPI.Play(c.popSound, audio.PlayInfo{
+					Gain: opt.V(1.0),
+				})
+				c.Invalidate()
+				continue
+			}
+
 			x := float32(active.Info.X * float64(c.screenWidth))
 			y := float32(active.Info.Y * float64(c.screenHeight))
 			if x < 0 || y < 0 || x > float32(c.screenWidth) || y > float32(c.screenHeight) {
@@ -413,42 +437,85 @@ func (c *playScreenComponent) Render() co.Instance {
 
 			switch c.mode {
 			case PlayModeCalibration:
-				co.WithChild("calibration-box", co.New(std.Container, func() {
+				// Show target crosshair
+				var targetX, targetY int
+				var targetText string
+				centerX := c.screenWidth / 2
+				centerY := c.screenHeight / 2
+				switch c.calibIndex {
+				case 0:
+					targetX, targetY = -centerX/2, -centerY/2
+					targetText = "Shoot TOP-LEFT"
+				case 1:
+					targetX, targetY = centerX/2, -centerY/2
+					targetText = "Shoot TOP-RIGHT"
+				case 2:
+					targetX, targetY = centerX/2, centerY/2
+					targetText = "Shoot BOTTOM-RIGHT"
+				case 3:
+					targetX, targetY = -centerX/2, centerY/2
+					targetText = "Shoot BOTTOM-LEFT"
+				}
+
+				co.WithChild("calib-target", co.New(std.Element, func() {
+					co.WithLayoutData(layout.Data{
+						HorizontalCenter: opt.V(targetX),
+						VerticalCenter:   opt.V(targetY),
+						Width:            opt.V(100),
+						Height:           opt.V(100),
+					})
+					co.WithData(std.ElementData{
+						Layout: layout.Anchor(),
+					})
+
+					// Crosshair lines
+					co.WithChild("h-line", co.New(std.Container, func() {
+						co.WithLayoutData(layout.Data{
+							HorizontalCenter: opt.V(0),
+							VerticalCenter:   opt.V(0),
+							Width:            opt.V(100),
+							Height:           opt.V(2),
+						})
+						co.WithData(std.ContainerData{
+							BackgroundColor: opt.V(ui.Green()),
+						})
+					}))
+					co.WithChild("v-line", co.New(std.Container, func() {
+						co.WithLayoutData(layout.Data{
+							HorizontalCenter: opt.V(0),
+							VerticalCenter:   opt.V(0),
+							Width:            opt.V(2),
+							Height:           opt.V(100),
+						})
+						co.WithData(std.ContainerData{
+							BackgroundColor: opt.V(ui.White()),
+						})
+					}))
+					co.WithChild("circle", co.New(std.Container, func() {
+						co.WithLayoutData(layout.Data{
+							HorizontalCenter: opt.V(0),
+							VerticalCenter:   opt.V(0),
+							Width:            opt.V(40),
+							Height:           opt.V(40),
+						})
+						co.WithData(std.ContainerData{
+							BorderColor: opt.V(ui.White()),
+							BorderSize:  ui.Spacing{Top: 2, Bottom: 2, Left: 2, Right: 2},
+						})
+					}))
+				}))
+
+				co.WithChild("calib-instruction", co.New(std.Label, func() {
 					co.WithLayoutData(layout.Data{
 						HorizontalCenter: opt.V(0),
-						VerticalCenter:   opt.V(0),
+						VerticalCenter:   opt.V(50), // Below center
 					})
-					co.WithData(std.ContainerData{
-						BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 180)),
-						Padding:         ui.Spacing{Left: 40, Right: 40, Top: 20, Bottom: 20},
-						Layout: layout.Vertical(layout.VerticalSettings{
-							ContentAlignment: layout.HorizontalAlignmentCenter,
-							ContentSpacing:   20,
-						}),
+					co.WithData(std.LabelData{
+						Font:      c.textFont,
+						FontSize:  opt.V(float32(32)),
+						FontColor: opt.V(ui.Yellow()),
+						Text:      targetText,
 					})
-
-					co.WithChild("text", co.New(std.Label, func() {
-						co.WithData(std.LabelData{
-							Font:      c.textFont,
-							FontSize:  opt.V(float32(32)),
-							FontColor: opt.V(ui.White()),
-							Text:      "Waiting for Calibration...",
-						})
-					}))
-
-					co.WithChild("start-btn", co.New(std.Button, func() {
-						co.WithData(std.ButtonData{
-							Text: "START GAME",
-						})
-						co.WithCallbackData(std.ButtonCallbackData{
-							OnClick: func() {
-								c.mode = PlayModeCountdown
-								c.modeTime = 3 * time.Second
-								c.ResetScores()
-								c.Invalidate()
-							},
-						})
-					}))
 				}))
 
 			case PlayModeCountdown:
@@ -578,9 +645,9 @@ func (c *playScreenComponent) Render() co.Instance {
 							})
 							co.WithCallbackData(std.ButtonCallbackData{
 								OnClick: func() {
+									c.ResetScores()
 									c.mode = PlayModeCountdown
 									c.modeTime = 3 * time.Second
-									c.ResetScores()
 									c.Invalidate()
 								},
 							})
@@ -675,6 +742,16 @@ func (c *playScreenComponent) createCamera(scene *graphics.Scene) *graphics.Came
 	result.SetAutoExposureSpeed(0.1)
 	result.SetCascadeDistances([]float32{32.0})
 	return result
+}
+
+func (c *playScreenComponent) ResetAll() {
+	c.calibIndex = 0
+	for id, active := range c.globalState.Actives {
+		active.Score = 0
+		active.Calibrated = 0
+		active.Calibration = [4]schema.Point{}
+		c.globalState.Actives[id] = active
+	}
 }
 
 func (c *playScreenComponent) ResetScores() {

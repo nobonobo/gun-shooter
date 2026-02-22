@@ -9,9 +9,11 @@ import (
 )
 
 type ActiveMember struct {
-	Time  time.Time
-	Info  *schema.Info
-	Score int
+	Time        time.Time
+	Info        *schema.Info
+	Score       int
+	Calibration [4]schema.Point
+	Calibrated  int
 }
 
 type GlobalState struct {

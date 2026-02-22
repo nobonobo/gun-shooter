@@ -234,7 +234,7 @@ func (app *Application) projection(marker js.Value, width, height float64) Marke
 	screenY := (1.0 - posY) / 2.0 * height
 
 	return Marker{
-		Point:    Point{X: screenX, Y: screenY},
+		Point:    schema.Point{X: screenX, Y: screenY},
 		Detected: marker.Get("detected").Truthy(),
 	}
 }
