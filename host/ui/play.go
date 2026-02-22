@@ -325,12 +325,12 @@ func (c *playScreenComponent) Render() co.Instance {
 					Top:   opt.V(0),
 					Right: opt.V(0),
 				}
-			case 2: // Bottom-Right
+			case 2: // Bottom-Left
 				layoutData = layout.Data{
 					Bottom: opt.V(0),
 					Left:   opt.V(0),
 				}
-			case 3: // Bottom-Left
+			case 3: // Bottom-Right
 				layoutData = layout.Data{
 					Bottom: opt.V(0),
 					Right:  opt.V(0),

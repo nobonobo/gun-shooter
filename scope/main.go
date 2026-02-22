@@ -7,8 +7,10 @@ import (
 	"log"
 	"math"
 	"net/url"
+	"strings"
 	"syscall/js"
 	"time"
+	"unicode"
 
 	"github.com/google/uuid"
 	"github.com/nobonobo/gun-shooter/schema"
@@ -276,11 +278,29 @@ func (app *Application) onResize() {
 	}
 }
 
+func isASCII(r rune) bool {
+	return r <= unicode.MaxASCII // 127以下
+}
+
+func IsASCIIOnly(s string) bool {
+	for _, r := range s {
+		if unicode.IsControl(r) || !isASCII(r) {
+			return false
+		}
+	}
+	return true
+}
+
 func main() {
 	if GetParam("name") == "" {
-		v := window.Call("prompt", "Enter your name")
-		if v.Type() == js.TypeString && v.String() != "" {
-			SetParam("name", v.String())
+		for {
+			v := window.Call("prompt", "Enter your name")
+			s := strings.TrimSpace(v.String())
+			if len(s) > 2 && IsASCIIOnly(s) {
+				SetParam("name", s)
+				break
+			}
+			window.Call("alert", "Invalid name contains ASCII only characters and more than 3 characters long")
 		}
 	}
 	skip := GetParam("skip") != ""
