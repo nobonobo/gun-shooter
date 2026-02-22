@@ -463,8 +463,8 @@ func (c *playScreenComponent) Render() co.Instance {
 				}))
 
 			case PlayModePlaying:
-				// HUD
-				co.WithChild("hud", co.New(std.Container, func() {
+				// HUD: Timer
+				co.WithChild("hud-timer", co.New(std.Container, func() {
 					co.WithLayoutData(layout.Data{
 						Top:              opt.V(20),
 						HorizontalCenter: opt.V(0),
@@ -486,6 +486,36 @@ func (c *playScreenComponent) Render() co.Instance {
 							Text:      fmt.Sprintf("TIME: %d", int(c.modeTime.Seconds())),
 						})
 					}))
+				}))
+
+				// HUD: Scores
+				co.WithChild("hud-scores", co.New(std.Container, func() {
+					co.WithLayoutData(layout.Data{
+						Top:  opt.V(20),
+						Left: opt.V(220), // Avoid markers
+					})
+					co.WithData(std.ContainerData{
+						BackgroundColor: opt.V(ui.RGBA(0, 0, 0, 120)),
+						Padding:         ui.Spacing{Left: 15, Right: 15, Top: 10, Bottom: 10},
+						Layout: layout.Vertical(layout.VerticalSettings{
+							ContentSpacing: 5,
+						}),
+					})
+
+					for id, active := range c.globalState.Actives {
+						if time.Since(active.Time) > 5*time.Second {
+							continue
+						}
+						score := c.scores[id]
+						co.WithChild("score-"+id, co.New(std.Label, func() {
+							co.WithData(std.LabelData{
+								Font:      c.textFont,
+								FontSize:  opt.V(float32(20)),
+								FontColor: opt.V(ui.White()),
+								Text:      fmt.Sprintf("%s: %d", active.Info.Name, score),
+							})
+						}))
+					}
 				}))
 
 			case PlayModeGameOver:
