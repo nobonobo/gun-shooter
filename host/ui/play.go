@@ -71,6 +71,7 @@ func LoadPlayData(audioAPI audio.API, engine *game.Engine, resourceSet *game.Res
 		resourceSet.FetchResource("board.dat", &data.Board),
 		resourceSet.FetchResource("ball.dat", &data.Ball),
 		FetchSound(audioAPI, engine, "ui/sounds/pop.mp3", &data.Pop),
+		FetchSound(audioAPI, engine, "ui/sounds/gun.mp3", &data.Gun),
 	), &data)
 }
 
@@ -79,6 +80,7 @@ type PlayData struct {
 	Board *game.ModelTemplate
 	Ball  *game.ModelTemplate
 	Pop   audio.Media
+	Gun   audio.Media
 }
 
 var PlayScreen = co.Define[*playScreenComponent]()
@@ -110,6 +112,7 @@ type playScreenComponent struct {
 	sceneData *PlayData
 	scene     *game.Scene
 	popSound  audio.Media
+	gunSound  audio.Media
 
 	textFont     *ui.Font
 	screenWidth  int
@@ -300,6 +303,7 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 			}
 
 			// プレイ中: ターゲットに命中した場合のみスコア加算
+			hit := false
 			if c.mode == PlayModePlaying {
 				for ti := 0; ti < len(c.targets); ti++ {
 					dx := x - c.targets[ti].x
@@ -311,14 +315,21 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 						// ターゲットを消す
 						c.targets[ti] = c.targets[len(c.targets)-1]
 						c.targets = c.targets[:len(c.targets)-1]
+						hit = true
 						break
 					}
 				}
 			}
 
-			c.audioAPI.Play(c.popSound, audio.PlayInfo{
-				Gain: opt.V(1.0),
-			})
+			if hit {
+				c.audioAPI.Play(c.popSound, audio.PlayInfo{
+					Gain: opt.V(1.0),
+				})
+			} else {
+				c.audioAPI.Play(c.gunSound, audio.PlayInfo{
+					Gain: opt.V(1.0),
+				})
+			}
 			for i := 0; i < 5; i++ {
 				c.particles = append(c.particles, particle{
 					x:    float32(x),
@@ -770,7 +781,8 @@ func (c *playScreenComponent) Render() co.Instance {
 func (c *playScreenComponent) createScene() {
 	c.sceneData = playSceneData // retrieve from global storage
 	c.popSound = c.sceneData.Pop
-	c.audioAPI.Play(c.popSound, audio.PlayInfo{
+	c.gunSound = c.sceneData.Gun
+	c.audioAPI.Play(c.gunSound, audio.PlayInfo{
 		Gain: opt.V(1.0),
 	})
 
