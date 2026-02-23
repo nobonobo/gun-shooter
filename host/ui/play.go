@@ -30,6 +30,7 @@ import (
 )
 
 const MarkerSize = 200
+const TargetRadius = 40
 
 func FetchSound(audioAPI audio.API, engine *game.Engine, name string, target *audio.Media) async.Operation {
 	return async.NewFuncOperation(func() error {
@@ -123,12 +124,23 @@ type playScreenComponent struct {
 	mode       PlayMode
 	modeTime   time.Duration
 	calibIndex int
+
+	// Targets
+	targets       []target
+	nextSpawnTime time.Time
+	gameDuration  float64 // ゲーム経過時間(秒)
 }
 
 type particle struct {
 	x, y   float32
 	vx, vy float32
 	life   float32 // 1.0 down to 0.0
+}
+
+type target struct {
+	x, y      float64 // screen pixel position
+	spawnTime time.Time
+	lifetime  time.Duration
 }
 
 var _ ui.ElementKeyboardHandler = (*playScreenComponent)(nil)
@@ -184,8 +196,60 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 			case PlayModeCountdown:
 				c.mode = PlayModePlaying
 				c.modeTime = 60 * time.Second // ゲーム時間は60秒
+				c.gameDuration = 0
+				c.targets = nil
+				c.nextSpawnTime = now
 			case PlayModePlaying:
 				c.mode = PlayModeGameOver
+				c.targets = nil
+			}
+		}
+	}
+
+	// ターゲットのスポーンと消滅 (プレイ中のみ)
+	if c.mode == PlayModePlaying {
+		c.gameDuration += float64(dt)
+		totalDuration := 60.0
+
+		// 経過割合 0.0 → 1.0
+		progress := c.gameDuration / totalDuration
+		if progress > 1.0 {
+			progress = 1.0
+		}
+
+		// スポーン間隔: 1.0秒 → 0.33秒 (1/sec → 3/sec)
+		spawnInterval := time.Duration((1.0 - progress*2.0/3.0) * float64(time.Second))
+		if spawnInterval < 333*time.Millisecond {
+			spawnInterval = 333 * time.Millisecond
+		}
+
+		// 寿命: 6秒 → 2秒
+		lifetime := time.Duration((6.0 - progress*4.0) * float64(time.Second))
+		if lifetime < 2*time.Second {
+			lifetime = 2 * time.Second
+		}
+
+		// スポーン
+		if now.After(c.nextSpawnTime) {
+			margin := float64(TargetRadius + MarkerSize/2)
+			tx := margin + rand.Float64()*float64(float64(c.screenWidth)-2*margin)
+			ty := margin + rand.Float64()*float64(float64(c.screenHeight)-2*margin)
+			c.targets = append(c.targets, target{
+				x:         tx,
+				y:         ty,
+				spawnTime: now,
+				lifetime:  lifetime,
+			})
+			c.nextSpawnTime = now.Add(spawnInterval)
+		}
+
+		// 期限切れのターゲットを除去
+		for i := 0; i < len(c.targets); {
+			if now.Sub(c.targets[i].spawnTime) > c.targets[i].lifetime {
+				c.targets[i] = c.targets[len(c.targets)-1]
+				c.targets = c.targets[:len(c.targets)-1]
+			} else {
+				i++
 			}
 		}
 	}
@@ -235,11 +299,21 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 				continue
 			}
 
-			// プレイ中のみスコア加算
+			// プレイ中: ターゲットに命中した場合のみスコア加算
 			if c.mode == PlayModePlaying {
-				m := c.globalState.Actives[id]
-				m.Score++
-				c.globalState.Actives[id] = m
+				for ti := 0; ti < len(c.targets); ti++ {
+					dx := x - c.targets[ti].x
+					dy := y - c.targets[ti].y
+					if dx*dx+dy*dy <= TargetRadius*TargetRadius {
+						m := c.globalState.Actives[id]
+						m.Score++
+						c.globalState.Actives[id] = m
+						// ターゲットを消す
+						c.targets[ti] = c.targets[len(c.targets)-1]
+						c.targets = c.targets[:len(c.targets)-1]
+						break
+					}
+				}
 			}
 
 			c.audioAPI.Play(c.popSound, audio.PlayInfo{
@@ -539,6 +613,25 @@ func (c *playScreenComponent) Render() co.Instance {
 				}))
 
 			case PlayModePlaying:
+				// ターゲット描画
+				for ti, tgt := range c.targets {
+					tgtX := int(tgt.x) - c.screenWidth/2
+					tgtY := int(tgt.y) - c.screenHeight/2
+					co.WithChild(fmt.Sprintf("target-%d", ti), co.New(std.Container, func() {
+						co.WithLayoutData(layout.Data{
+							HorizontalCenter: opt.V(tgtX),
+							VerticalCenter:   opt.V(tgtY),
+							Width:            opt.V(TargetRadius * 2),
+							Height:           opt.V(TargetRadius * 2),
+						})
+						co.WithData(std.ContainerData{
+							BackgroundColor: opt.V(ui.RGBA(255, 40, 40, 200)),
+							BorderColor:     opt.V(ui.White()),
+							BorderSize:      ui.Spacing{Top: 2, Bottom: 2, Left: 2, Right: 2},
+						})
+					}))
+				}
+
 				// HUD: Timer
 				co.WithChild("hud-timer", co.New(std.Container, func() {
 					co.WithLayoutData(layout.Data{

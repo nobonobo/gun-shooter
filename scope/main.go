@@ -291,6 +291,29 @@ func IsASCIIOnly(s string) bool {
 	return true
 }
 
+func disconnected(n *node.Node) {
+	overlay := document.Call("createElement", "div")
+	overlay.Get("style").Set("cssText",
+		"position:fixed;top:0;left:0;width:100%;height:100%;"+
+			"background:rgba(0,0,0,0.8);display:flex;flex-direction:column;"+
+			"align-items:center;justify-content:center;z-index:9999;")
+	msg := document.Call("createElement", "div")
+	msg.Get("style").Set("cssText", "color:white;font-size:24px;margin-bottom:20px;")
+	msg.Set("innerText", "接続に失敗しました")
+	overlay.Call("appendChild", msg)
+	btn := document.Call("createElement", "button")
+	btn.Get("style").Set("cssText",
+		"padding:12px 32px;font-size:20px;cursor:pointer;"+
+			"background:#e74c3c;color:white;border:none;border-radius:8px;")
+	btn.Set("innerText", "再接続")
+	btn.Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
+		window.Get("location").Call("reload")
+		return nil
+	}))
+	overlay.Call("appendChild", btn)
+	document.Get("body").Call("appendChild", overlay)
+}
+
 func main() {
 	if GetParam("name") == "" {
 		for {
@@ -309,55 +332,49 @@ func main() {
 	app := NewApplication()
 	defer app.Close()
 	cnt := 0
-	go func() {
-		if !skip {
-			connect := false
-			for i := 0; i < 3; i++ {
-				fmt.Println("connecting:", app.uid)
-				err := app.Connect(context.Background())
-				if err == nil {
-					connect = true
-					break
-				}
-				log.Println(err)
-				time.Sleep(5 * time.Second)
-			}
-			if !connect {
-				log.Fatal("failed to connect")
+	app.OnUpdate = func(markers [4]Marker) {
+		w, h := window.Get("innerWidth").Float(), window.Get("innerHeight").Float()
+		points := compensateMarkers(markers)
+		x, y := calc(points, w, h)
+		if math.IsNaN(x) {
+			x = 0.5
+		}
+		if math.IsNaN(y) {
+			y = 0.5
+		}
+		if cnt%10 == 0 {
+			elm := document.Call("getElementById", "message")
+			info := fmt.Sprintf("x:%5.2f, y:%5.2f", x, y)
+			if elm.Get("innerText").String() != info {
+				elm.Set("innerText", info)
 			}
 		}
-		app.OnUpdate = func(markers [4]Marker) {
-			w, h := window.Get("innerWidth").Float(), window.Get("innerHeight").Float()
-			points := compensateMarkers(markers)
-			x, y := calc(points, w, h)
-			if math.IsNaN(x) {
-				x = 0.5
+		cnt++
+		if !skip {
+			info := schema.Info{
+				ID:   app.uid,
+				Name: app.name,
+				X:    x,
+				Y:    y,
+				Fire: app.fire,
 			}
-			if math.IsNaN(y) {
-				y = 0.5
+			b, _ := json.Marshal(info)
+			if err := app.Publish(b, info.Fire); err != nil {
+				return
 			}
-			if cnt%10 == 0 {
-				elm := document.Call("getElementById", "message")
-				info := fmt.Sprintf("x:%5.2f, y:%5.2f", x, y)
-				if elm.Get("innerText").String() != info {
-					elm.Set("innerText", info)
-				}
+			app.fire = false
+		}
+	}
+	go func() {
+		if !skip {
+			fmt.Println("connecting:", app.uid)
+			err := app.Connect(context.Background())
+			if err != nil {
+				log.Println("connect error:", err)
+				disconnected(nil)
+				return
 			}
-			cnt++
-			if !skip {
-				info := schema.Info{
-					ID:   app.uid,
-					Name: app.name,
-					X:    x,
-					Y:    y,
-					Fire: app.fire,
-				}
-				b, _ := json.Marshal(info)
-				if err := app.Publish(b, info.Fire); err != nil {
-					return
-				}
-				app.fire = false
-			}
+			app.node.OnDisconnect = disconnected
 		}
 		app.Run()
 	}()
