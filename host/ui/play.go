@@ -465,53 +465,6 @@ func (c *playScreenComponent) Render() co.Instance {
 			}))
 		}
 
-		// Player Markers (Only visible during Calibration, Countdown, and Playing)
-		if c.mode != PlayModeGameOver {
-			for _, id := range slices.Sorted(maps.Keys(c.globalState.Actives)) {
-				active := c.globalState.Actives[id]
-				if time.Since(active.Time) > 5*time.Second {
-					continue
-				}
-				pos := active.Calibrate()
-				x := int(pos.X*float64(c.screenWidth-MarkerSize) + MarkerSize/2)
-				y := int(pos.Y*float64(c.screenHeight-MarkerSize) + MarkerSize/2)
-				co.WithChild("player-"+id, co.New(std.Element, func() {
-					co.WithLayoutData(layout.Data{
-						HorizontalCenter: opt.V(int(x) - c.screenWidth/2),
-						Top:              opt.V(int(y) - 5),
-					})
-					co.WithData(std.ElementData{
-						Layout: layout.Vertical(layout.VerticalSettings{
-							ContentAlignment: layout.HorizontalAlignmentCenter,
-						}),
-					})
-
-					co.WithChild("dot", co.New(std.Container, func() {
-						color := ui.Green()
-						if active.Info.Fire {
-							color = ui.Red()
-						}
-						co.WithLayoutData(layout.Data{
-							Width:  opt.V(10),
-							Height: opt.V(10),
-						})
-						co.WithData(std.ContainerData{
-							BackgroundColor: opt.V(color),
-						})
-					}))
-
-					co.WithChild("label", co.New(std.Label, func() {
-						co.WithData(std.LabelData{
-							Font:      c.textFont,
-							FontSize:  opt.V(float32(16)),
-							FontColor: opt.V(ui.White()),
-							Text:      active.Info.Name,
-						})
-					}))
-				}))
-			}
-		}
-
 		// Mode Overlays
 		co.WithChild("overlay", co.New(std.Element, func() {
 			co.WithLayoutData(layout.Data{
@@ -775,6 +728,53 @@ func (c *playScreenComponent) Render() co.Instance {
 				}))
 			}
 		}))
+
+		// Player Markers (Only visible during Calibration, Countdown, and Playing)
+		if c.mode != PlayModeGameOver {
+			for _, id := range slices.Sorted(maps.Keys(c.globalState.Actives)) {
+				active := c.globalState.Actives[id]
+				if time.Since(active.Time) > 5*time.Second {
+					continue
+				}
+				pos := active.Calibrate()
+				x := int(pos.X*float64(c.screenWidth-MarkerSize) + MarkerSize/2)
+				y := int(pos.Y*float64(c.screenHeight-MarkerSize) + MarkerSize/2)
+				co.WithChild("player-"+id, co.New(std.Element, func() {
+					co.WithLayoutData(layout.Data{
+						HorizontalCenter: opt.V(int(x) - c.screenWidth/2),
+						Top:              opt.V(int(y) - 5),
+					})
+					co.WithData(std.ElementData{
+						Layout: layout.Vertical(layout.VerticalSettings{
+							ContentAlignment: layout.HorizontalAlignmentCenter,
+						}),
+					})
+
+					co.WithChild("dot", co.New(std.Container, func() {
+						color := ui.Green()
+						if active.Info.Fire {
+							color = ui.Red()
+						}
+						co.WithLayoutData(layout.Data{
+							Width:  opt.V(10),
+							Height: opt.V(10),
+						})
+						co.WithData(std.ContainerData{
+							BackgroundColor: opt.V(color),
+						})
+					}))
+
+					co.WithChild("label", co.New(std.Label, func() {
+						co.WithData(std.LabelData{
+							Font:      c.textFont,
+							FontSize:  opt.V(float32(16)),
+							FontColor: opt.V(ui.White()),
+							Text:      active.Info.Name,
+						})
+					}))
+				}))
+			}
+		}
 	})
 }
 
