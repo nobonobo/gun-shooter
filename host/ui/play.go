@@ -289,7 +289,7 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 						c.ResetScores()
 					}
 				}
-				c.audioAPI.Play(c.popSound, audio.PlayInfo{
+				c.audioAPI.Play(c.gunSound, audio.PlayInfo{
 					Gain: opt.V(1.0),
 				})
 				c.Invalidate()
