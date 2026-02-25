@@ -194,7 +194,7 @@ func (app *Application) createMarkers() {
 				"patternUrl":       u,
 				"changeMatrixMode": "modelViewMatrix",
 				"minConfidence":    0.5,
-				"smooth":           true,
+				"smooth":           false,
 				"smoothCount":      5,
 				"smoothTolerance":  0.005,
 				"smoothThreshold":  2,
