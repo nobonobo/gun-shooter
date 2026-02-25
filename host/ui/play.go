@@ -199,6 +199,21 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	c.screenWidth = element.Bounds().Width
 	c.screenHeight = element.Bounds().Height
 
+	// メンバーがいない場合はキャリブレーションをスキップ
+	if c.mode == PlayModeCalibration {
+		activeCount := 0
+		for _, active := range c.globalState.Actives {
+			if time.Since(active.Time) <= 5*time.Second {
+				activeCount++
+			}
+		}
+		if activeCount == 0 {
+			c.mode = PlayModeCountdown
+			c.modeTime = 3 * time.Second
+			c.ResetScores()
+		}
+	}
+
 	now := time.Now()
 	dt := float32(now.Sub(c.lastUpdateTime).Seconds())
 	c.lastUpdateTime = now
