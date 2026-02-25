@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"maps"
+	"math"
 	"math/rand"
 	"slices"
 	"time"
@@ -30,7 +31,7 @@ import (
 )
 
 const MarkerSize = 200
-const TargetRadius = 40
+const TargetRadius = 60
 
 func FetchSound(audioAPI audio.API, engine *game.Engine, name string, target *audio.Media) async.Operation {
 	return async.NewFuncOperation(func() error {
@@ -98,6 +99,18 @@ const (
 	PlayModeGameOver
 )
 
+type scorePopup struct {
+	x, y  float64
+	text  []rune
+	color ui.Color
+	life  float32 // 1.0 down to 0.0 (total 1.5s)
+}
+
+var (
+	textPlus1 = []rune("+1")
+	textPlus5 = []rune("+5")
+)
+
 type playScreenComponent struct {
 	co.BaseComponent
 
@@ -131,7 +144,8 @@ type playScreenComponent struct {
 	// Targets
 	targets       []target
 	nextSpawnTime time.Time
-	gameDuration  float64 // ゲーム経過時間(秒)
+	gameDuration  float64      // ゲーム経過時間(秒)
+	scorePopups   []scorePopup // 命中時のスコアポップアップ
 }
 
 type particle struct {
@@ -308,13 +322,32 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 				for ti := 0; ti < len(c.targets); ti++ {
 					dx := x - c.targets[ti].x
 					dy := y - c.targets[ti].y
-					if dx*dx+dy*dy <= TargetRadius*TargetRadius {
+					distSq := dx*dx + dy*dy
+					if distSq <= TargetRadius*TargetRadius {
+						dist := math.Sqrt(distSq)
+						points := 1
+						color := ui.Red()
+						txt := textPlus1
+						if dist <= 30 {
+							points = 5
+							color = ui.Yellow()
+							txt = textPlus5
+						}
+
 						m := c.globalState.Actives[id]
-						m.Score++
+						m.Score += points
 						c.globalState.Actives[id] = m
 						// ターゲットを消す
 						c.targets[ti] = c.targets[len(c.targets)-1]
 						c.targets = c.targets[:len(c.targets)-1]
+						// スコアポップアップを追加
+						c.scorePopups = append(c.scorePopups, scorePopup{
+							x:     x,
+							y:     y,
+							text:  txt,
+							color: color,
+							life:  1.0,
+						})
 						hit = true
 						break
 					}
@@ -381,19 +414,46 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 			canvas.Fill(ui.Fill{
 				Color: ui.RGBA(255, 40, 40, 200),
 			})
+			// 中心 (黄色)
+			canvas.Reset()
+			canvas.Circle(sprec.Vec2{X: float32(tgt.x), Y: float32(tgt.y)}, 30)
+			canvas.Fill(ui.Fill{
+				Color: ui.Yellow(),
+			})
 		}
+	}
+
+	// スコアポップアップの描画
+	for _, s := range c.scorePopups {
+		canvas.Reset()
+		canvas.FillTextLine(s.text, sprec.NewVec2(float32(s.x), float32(s.y-20)), ui.Typography{
+			Font:  c.textFont,
+			Size:  32,
+			Color: ui.RGBA(s.color.R*255, s.color.G*255, s.color.B*255, uint8(s.life*255)), // フェードアウト
+		})
 	}
 
 	invalid := true
 	if c.mode == PlayModeCalibration {
 		invalid = false // キャリブレーション中は描画更新不要（パーティクルがなければ）
 	}
-	if len(c.particles) > 0 || c.modeTime > 0 || c.mode == PlayModePlaying {
+	if len(c.particles) > 0 || len(c.scorePopups) > 0 || c.modeTime > 0 || c.mode == PlayModePlaying {
 		invalid = true
 	}
 
 	if invalid {
 		c.Invalidate()
+	}
+	// スコアポップアップの更新
+	for i := 0; i < len(c.scorePopups); {
+		s := &c.scorePopups[i]
+		s.life -= dt / 1.5 // 1.5秒で消える
+		if s.life <= 0 {
+			c.scorePopups[i] = c.scorePopups[len(c.scorePopups)-1]
+			c.scorePopups = c.scorePopups[:len(c.scorePopups)-1]
+		} else {
+			i++
+		}
 	}
 }
 
