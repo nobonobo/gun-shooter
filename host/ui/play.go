@@ -366,6 +366,24 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 		})
 	}
 
+	// ターゲットの描画
+	if c.mode == PlayModePlaying {
+		for _, tgt := range c.targets {
+			// 外枠 (白)
+			canvas.Reset()
+			canvas.Circle(sprec.Vec2{X: float32(tgt.x), Y: float32(tgt.y)}, float32(TargetRadius))
+			canvas.Fill(ui.Fill{
+				Color: ui.White(),
+			})
+			// 内側 (赤)
+			canvas.Reset()
+			canvas.Circle(sprec.Vec2{X: float32(tgt.x), Y: float32(tgt.y)}, float32(TargetRadius-2))
+			canvas.Fill(ui.Fill{
+				Color: ui.RGBA(255, 40, 40, 200),
+			})
+		}
+	}
+
 	invalid := true
 	if c.mode == PlayModeCalibration {
 		invalid = false // キャリブレーション中は描画更新不要（パーティクルがなければ）
@@ -577,25 +595,6 @@ func (c *playScreenComponent) Render() co.Instance {
 				}))
 
 			case PlayModePlaying:
-				// ターゲット描画
-				for ti, tgt := range c.targets {
-					tgtX := int(tgt.x) - c.screenWidth/2
-					tgtY := int(tgt.y) - c.screenHeight/2
-					co.WithChild(fmt.Sprintf("target-%d", ti), co.New(std.Container, func() {
-						co.WithLayoutData(layout.Data{
-							HorizontalCenter: opt.V(tgtX),
-							VerticalCenter:   opt.V(tgtY),
-							Width:            opt.V(TargetRadius * 2),
-							Height:           opt.V(TargetRadius * 2),
-						})
-						co.WithData(std.ContainerData{
-							BackgroundColor: opt.V(ui.RGBA(255, 40, 40, 200)),
-							BorderColor:     opt.V(ui.White()),
-							BorderSize:      ui.Spacing{Top: 2, Bottom: 2, Left: 2, Right: 2},
-						})
-					}))
-				}
-
 				// HUD: Timer
 				co.WithChild("hud-timer", co.New(std.Container, func() {
 					co.WithLayoutData(layout.Data{
