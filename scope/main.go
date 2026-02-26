@@ -259,23 +259,25 @@ func (app *Application) onResize() {
 	if !app.arToolkitSrc.Truthy() || !app.arToolkitSrc.Get("ready").Truthy() {
 		return
 	}
-	w, h := window.Get("innerWidth"), window.Get("innerHeight")
-	canvas := app.renderer.Get("domElement")
-	video := app.arToolkitSrc.Get("domElement")
-	video.Get("style").Set("width", w)
-	video.Get("style").Set("height", h)
-	app.renderer.Call("setSize", w, h)
-	app.arToolkitSrc.Call("onResizeElement")
-	app.arToolkitSrc.Call("copyElementSizeTo", canvas)
+	time.AfterFunc(500*time.Millisecond, func() {
+		w, h := window.Get("innerWidth"), window.Get("innerHeight")
+		canvas := app.renderer.Get("domElement")
+		video := app.arToolkitSrc.Get("domElement")
+		video.Get("style").Set("width", w)
+		video.Get("style").Set("height", h)
+		app.renderer.Call("setSize", w, h)
+		app.arToolkitSrc.Call("onResizeElement")
+		app.arToolkitSrc.Call("copyElementSizeTo", canvas)
 
-	canvas.Get("style").Set("width", video.Get("style").Get("width"))
-	canvas.Get("style").Set("height", video.Get("style").Get("height"))
-	canvas.Get("style").Set("margin-left", video.Get("style").Get("margin-left"))
-	canvas.Get("style").Set("margin-top", video.Get("style").Get("margin-top"))
+		canvas.Get("style").Set("width", video.Get("style").Get("width"))
+		canvas.Get("style").Set("height", video.Get("style").Get("height"))
+		canvas.Get("style").Set("margin-left", video.Get("style").Get("margin-left"))
+		canvas.Get("style").Set("margin-top", video.Get("style").Get("margin-top"))
 
-	if app.arToolkitCtx.Truthy() {
-		app.camera.Get("projectionMatrix").Call("copy", app.arToolkitCtx.Call("getProjectionMatrix"))
-	}
+		if app.arToolkitCtx.Truthy() {
+			app.camera.Get("projectionMatrix").Call("copy", app.arToolkitCtx.Call("getProjectionMatrix"))
+		}
+	})
 }
 
 func isASCII(r rune) bool {
