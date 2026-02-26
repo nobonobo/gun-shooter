@@ -297,20 +297,30 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 			// Calibration mode logic
 			if c.mode == PlayModeCalibration {
 				m := c.globalState.Actives[id]
-				m.Calibration[m.Calibrated] = schema.Point{
-					X: active.Info.X,
-					Y: active.Info.Y,
+				// 既にこの箇所のキャリブレーションを終えている、または範囲外なら無視
+				if m.Calibrated == c.calibIndex && m.Calibrated < 4 {
+					m.Calibration[m.Calibrated] = schema.Point{
+						X: active.Info.X,
+						Y: active.Info.Y,
+					}
+					m.Calibrated++
+					c.globalState.Actives[id] = m
 				}
-				m.Calibrated++
-				c.globalState.Actives[id] = m
-				allCalibrated := true
-				for _, active := range c.globalState.Actives {
-					if active.Calibrated <= c.calibIndex {
-						allCalibrated = false
-						break
+
+				// 全員が現在のインデックス(c.calibIndex)を完了したかチェック
+				allAdvanced := true
+				hasActiveMembers := false
+				for _, am := range c.globalState.Actives {
+					if time.Since(am.Time) <= 5*time.Second {
+						hasActiveMembers = true
+						if am.Calibrated <= c.calibIndex {
+							allAdvanced = false
+							break
+						}
 					}
 				}
-				if allCalibrated {
+
+				if hasActiveMembers && allAdvanced {
 					c.calibIndex++
 					if c.calibIndex > 3 {
 						c.mode = PlayModeCountdown
