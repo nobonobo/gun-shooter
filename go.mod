@@ -11,6 +11,8 @@ require (
 	github.com/mokiat/lacking-native v0.23.0
 	github.com/mokiat/lacking-studio v0.23.0
 	github.com/nobonobo/rtcconnect v0.0.0-20260223015248-ec7b6534df1a
+	github.com/pion/webrtc/v4 v4.2.3
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 )
 
 require (
@@ -49,11 +51,9 @@ require (
 	github.com/pion/stun/v3 v3.1.1 // indirect
 	github.com/pion/transport/v4 v4.0.1 // indirect
 	github.com/pion/turn/v4 v4.1.4 // indirect
-	github.com/pion/webrtc/v4 v4.2.3 // indirect
 	github.com/qmuntal/gltf v0.28.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
-	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/spf13/cobra v1.10.1 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/urfave/cli/v2 v2.27.7 // indirect

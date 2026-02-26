@@ -454,7 +454,7 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 		canvas.FillTextLine(s.text, sprec.NewVec2(float32(s.x), float32(s.y-20)), ui.Typography{
 			Font:  c.textFont,
 			Size:  32,
-			Color: ui.RGBA(s.color.R*255, s.color.G*255, s.color.B*255, uint8(s.life*255)), // フェードアウト
+			Color: ui.RGBA(s.color.R, s.color.G, s.color.B, uint8(s.life*255)), // フェードアウト
 		})
 	}
 
