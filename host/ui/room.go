@@ -51,6 +51,7 @@ type roomScreenComponent struct {
 	globalState GlobalState
 	eventBus    *mvc.EventBus
 	cnt         int
+	flip        bool
 }
 
 func (c *roomScreenComponent) OnCreate() {
@@ -216,16 +217,21 @@ func (c *roomScreenComponent) Render() co.Instance {
 					Top:              opt.V(20),
 					HorizontalCenter: opt.V(-170),
 					Width:            opt.V(320),
-					Height:           opt.V(320),
+					Height:           opt.V(320 + 40),
 				})
 				co.WithData(std.ElementData{
 					Layout: layout.Anchor(),
 				})
+				
 				link := BaseURL() + "scope/?dest=" + GetParam("id")
+				if c.flip {
+					link += "&flip=true"
+				}
+				
 				co.WithChild("qr-code", co.New(widget.QRCode, func() {
 					co.WithLayoutData(layout.Data{
+						Top:              opt.V(0),
 						HorizontalCenter: opt.V(0),
-						VerticalCenter:   opt.V(0),
 					})
 					co.WithData(widget.QRCodeData{
 						Text: link,
@@ -237,6 +243,38 @@ func (c *roomScreenComponent) Render() co.Instance {
 							URLOpen(link)
 						},
 					})
+				}))
+				
+				co.WithChild("flip-checkbox-container", co.New(std.Element, func() {
+					co.WithLayoutData(layout.Data{
+						Bottom:           opt.V(0),
+						HorizontalCenter: opt.V(0),
+					})
+					co.WithData(std.ElementData{
+						Layout: layout.Horizontal(layout.HorizontalSettings{
+							ContentAlignment: layout.VerticalAlignmentCenter,
+							ContentSpacing:   10,
+						}),
+					})
+					co.WithChild("flip-checkbox", co.New(std.Checkbox, func() {
+						co.WithData(std.CheckboxData{
+							Checked: c.flip,
+						})
+						co.WithCallbackData(std.CheckboxCallbackData{
+							OnToggle: func(checked bool) {
+								c.flip = checked
+								c.Invalidate()
+							},
+						})
+					}))
+					co.WithChild("flip-label", co.New(std.Label, func() {
+						co.WithData(std.LabelData{
+							Font:      c.textFont,
+							FontSize:  opt.V(float32(20)),
+							FontColor: opt.V(ui.White()),
+							Text:      "Flip Screen",
+						})
+					}))
 				}))
 			}))
 

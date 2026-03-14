@@ -42,7 +42,7 @@ func getViewFromHash() ViewName {
 	return ""
 }
 
-func initRouter(app *applicationComponent) {
+func initRouter(c *homeScreenComponent) {
 }
 
 func updateHash(view ViewName) {

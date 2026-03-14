@@ -5,6 +5,10 @@ body {
   background-color: black;
 }
 
+.flip {
+  transform: scaleX(-1);
+}
+
 .center-hole-mask {
   position: absolute;
   top: 0;

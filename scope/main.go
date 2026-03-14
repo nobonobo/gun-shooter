@@ -34,6 +34,7 @@ type Application struct {
 	cancel       context.CancelFunc
 	cnt          int
 	fire         bool
+	flip         bool
 	OnUpdate     func([4]Marker)
 }
 
@@ -45,6 +46,7 @@ func NewApplication() *Application {
 		name = "NoName"
 	}
 	dest := u.Query().Get("dest")
+	flip := u.Query().Get("flip") == "true"
 	n := node.New(uid.String())
 	app := &Application{
 		patternUrls: []string{
@@ -59,6 +61,7 @@ func NewApplication() *Application {
 		node:     n,
 		ctx:      context.Background(),
 		cancel:   func() {},
+		flip:     flip,
 		OnUpdate: func(markers [4]Marker) {},
 	}
 	return app
@@ -93,6 +96,10 @@ func (app *Application) Close() error {
 }
 
 func (app *Application) Run() {
+	if app.flip {
+		document.Get("body").Get("classList").Call("add", "flip")
+	}
+
 	// canvas作成
 	canvas := document.Call("createElement", "canvas")
 	document.Get("body").Call("appendChild", canvas)
