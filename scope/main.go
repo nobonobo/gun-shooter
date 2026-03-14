@@ -170,6 +170,11 @@ func (app *Application) initARContext() {
 		})
 		app.renderer.Get("domElement").Set("width", arSource.Get("domElement").Get("videoWidth"))
 		app.renderer.Get("domElement").Set("height", arSource.Get("domElement").Get("videoHeight"))
+		
+		if app.flip {
+			arSource.Get("domElement").Get("style").Set("transform", "scaleX(-1)")
+		}
+		
 		app.arToolkitCtx = ctx
 		ctx.Call("init", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			// カメラの射影行列更新
