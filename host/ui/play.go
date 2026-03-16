@@ -826,7 +826,7 @@ func (c *playScreenComponent) Render() co.Instance {
 				co.WithChild("player-"+id, co.New(std.Element, func() {
 					co.WithLayoutData(layout.Data{
 						HorizontalCenter: opt.V(int(x) - c.screenWidth/2),
-						Top:              opt.V(int(y) - 5),
+						Top:              opt.V(int(y) - 10),
 					})
 					co.WithData(std.ElementData{
 						Layout: layout.Vertical(layout.VerticalSettings{
@@ -840,8 +840,8 @@ func (c *playScreenComponent) Render() co.Instance {
 							color = ui.Red()
 						}
 						co.WithLayoutData(layout.Data{
-							Width:  opt.V(10),
-							Height: opt.V(10),
+							Width:  opt.V(20),
+							Height: opt.V(20),
 						})
 						co.WithData(std.ContainerData{
 							BackgroundColor: opt.V(color),
@@ -851,7 +851,7 @@ func (c *playScreenComponent) Render() co.Instance {
 					co.WithChild("label", co.New(std.Label, func() {
 						co.WithData(std.LabelData{
 							Font:      c.textFont,
-							FontSize:  opt.V(float32(16)),
+							FontSize:  opt.V(float32(32)),
 							FontColor: opt.V(ui.White()),
 							Text:      active.Info.Name,
 						})
