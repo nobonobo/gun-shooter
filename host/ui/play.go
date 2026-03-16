@@ -31,7 +31,7 @@ import (
 )
 
 const MarkerSize = 200
-const TargetRadius = 60
+const TargetRadius = 120
 
 func FetchSound(audioAPI audio.API, engine *game.Engine, name string, target *audio.Media) async.Operation {
 	return async.NewFuncOperation(func() error {
@@ -353,7 +353,7 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 						points := 1
 						color := ui.Red()
 						txt := textPlus1
-						if dist <= 30 {
+						if dist <= 60 {
 							points = 5
 							color = ui.Yellow()
 							txt = textPlus5
@@ -418,7 +418,7 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 	for _, p := range c.particles {
 		color := ui.RGBA(255, 128, 0, uint8(p.life*255)) // オレンジ色からフェードアウト
 		canvas.Reset()
-		canvas.Circle(sprec.Vec2{X: p.x, Y: p.y}, 5)
+		canvas.Circle(sprec.Vec2{X: p.x, Y: p.y}, 10)
 		canvas.Fill(ui.Fill{
 			Color: color,
 		})
@@ -435,13 +435,13 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 			})
 			// 内側 (赤)
 			canvas.Reset()
-			canvas.Circle(sprec.Vec2{X: float32(tgt.x), Y: float32(tgt.y)}, float32(TargetRadius-2))
+			canvas.Circle(sprec.Vec2{X: float32(tgt.x), Y: float32(tgt.y)}, float32(TargetRadius-4))
 			canvas.Fill(ui.Fill{
 				Color: ui.RGBA(255, 40, 40, 200),
 			})
 			// 中心 (黄色)
 			canvas.Reset()
-			canvas.Circle(sprec.Vec2{X: float32(tgt.x), Y: float32(tgt.y)}, 30)
+			canvas.Circle(sprec.Vec2{X: float32(tgt.x), Y: float32(tgt.y)}, 60)
 			canvas.Fill(ui.Fill{
 				Color: ui.Yellow(),
 			})
@@ -453,7 +453,7 @@ func (c *playScreenComponent) OnRender(element *ui.Element, canvas *ui.Canvas) {
 		canvas.Reset()
 		canvas.FillTextLine(s.text, sprec.NewVec2(float32(s.x), float32(s.y-20)), ui.Typography{
 			Font:  c.textFont,
-			Size:  32,
+			Size:  64,
 			Color: ui.RGBA(s.color.R, s.color.G, s.color.B, uint8(s.life*255)), // フェードアウト
 		})
 	}
